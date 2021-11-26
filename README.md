@@ -1,30 +1,29 @@
 # koffie ☕
 An open source PID for espresso machines.
 
-## What is koffie?
+### What is koffie?
 >  Did you know, *koffie* is the dutch word for coffee
 
 Koffie is an open source project which allows you (the user) to programatically set and adjust the boiler pressure of your espresso machine in real time. ☕
 
-## Caveat(s)
+### Caveats
 - This project was designed/develloped on a pre-millenium La Pavoni Europiccola (double rocker; power switch + hi/low)
 - Your implementation may be different than what's outlined here, but with some simple probing on your espresso machine you should be on your way.
 
 # Let's get started
 
-## Things your already own
+## Things you already own
 - A "dumb" espresso machine
 - A computer
     - The tutorial is written using a Mac, but a Windows or Linux computer is also fine.
 - A spare phone charger and USB cable to power the Arduino.
-- 
 
 ## Required parts
 > You requirements may differ, so this list may or may not be complete depending on what sensors you want to install / your espresso machine.
 
 I've provided links to the parts where I can. Most are sourced from Aliexpress as that's usually the most cost effective option.
 
-### La Pavoni Europiccola & Professional
+#### La Pavoni Europiccola & Professional
 
 - [Arduino Nano or other compatible](https://aliexpress.com/item/4000903444456.html). 
     - I chose the option `Type-C USB`
