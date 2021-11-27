@@ -16,4 +16,4 @@ This section has been split across multiple pages to make the project easier to 
 
 1. [Parts list and costs](docs/requirements.md)
 1. [Circuit Diagrams](docs/circuits.md)
-1. [Arduino Code](docs.arduino_code.md)
+1. [Arduino Code](docs/arduino_code.md)
