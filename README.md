@@ -13,7 +13,7 @@ Koffie is an open source project which allows you (the user) to programatically 
 # Let's get started
 
 This section has been split across multiple pages to make the project easier to digest.
-1. [Design doc - what this does]()
+1. [Design document](docs/design.md) **<- START HERE**
 1. [Parts list and costs](docs/requirements.md)
 1. [Circuit diagrams](docs/circuits.md)
 1. [Arduino code](docs/arduino_code.md)
