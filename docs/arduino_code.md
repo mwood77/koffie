@@ -1,6 +1,6 @@
 > [Back to main page](../README.md)
 
-# Arduino Code
+# Arduino code
 
 ## Prerequisites
 If you've never used/programmed an Arduino before, I'd strongly suggest you start here:

@@ -1,6 +1,6 @@
 > [Back to main page](../README.md)
 
-# Circuit Diagrams
+# Circuit diagrams
 
 ## Arduino circuit
 > content goes here
