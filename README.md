@@ -16,4 +16,4 @@ This section has been split across multiple pages to make the project easier to 
 1. [Design document](docs/design.md) **<- START HERE**
 1. [Parts list and costs](docs/requirements.md)
 1. [Circuit diagrams](docs/circuits.md)
-1. [Arduino code](docs/arduino_code.md)
+1. [Arduino code walkthrough](docs/arduino_code.md) **<- READ THIS BEFORE UPLOADING TO YOUR ARDUINO**

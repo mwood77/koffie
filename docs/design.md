@@ -43,12 +43,10 @@ The purpose of this document is:
 ![Block diagram of koffie interface](images/koffie_block_diagram_gui.jpeg)
 
 #### Populated block diagram interface
+|  |  |
+| - | - |
+| ![Block diagram of koffie interface](images/populated_koffie_block_diagram_gui.jpeg) | - A signle mode is illuminated when activated <br/> - When in "programming mode," the corresponding parent mode will flash <br/> - Temperatures are displayed, if available <br/> - if no probe is connected, `N/C` is displayed |
 
-![Block diagram of koffie interface](images/populated_koffie_block_diagram_gui.jpeg)
-- A signle mode is illuminated when activated
-    - When in "programming mode," the corresponding parent mode will flash
-- Temperatures are displayed, if available
-    - if no probe is connected, `N/C` is displayed
 
 ## Bonus features / nice to haves
 - Configurable to display units in Science & Frankenstien
