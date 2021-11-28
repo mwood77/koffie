@@ -22,6 +22,10 @@ That's hard to answer, but if you purchase everything in t the list beneath, it 
 I've provided links to the parts where I can. Most are sourced from Aliexpress as that's usually the most cost effective option.
 
 #### La Pavoni Europiccola & Professional
+> @todo 
+>
+>   - Resistor values need to be added
+>   - Power swtich implementation to be verified
 
 - [ ] [Arduino Nano or other compatible](https://aliexpress.com/item/4000903444456.html). 
     - I chose the option: `Type-C USB`
@@ -43,8 +47,8 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
             - Size: `Self-reset momentary`
             - Standard: `choose whatever LED colour you'd like. I'd recommend matching it to your OLED.`
             - Quantity: `2`
-- [ ] [A 4-pin power switch](https://s.click.aliexpress.com/e/_A9EgSG). 
-    - Double check the voltage and amperage rating!
+- [ ] ~[A 4-pin power switch](https://s.click.aliexpress.com/e/_A9EgSG). ~
+    - ~Double check the voltage and amperage rating!~
 - [ ] [An enclosure to mount the electronics](https://s.click.aliexpress.com/e/_AKRz3E).
 - [ ] [A digital temperature sensor](https://s.click.aliexpress.com/e/_A4KEIU).
     - We'll hack this to fit in the joint between the group head and boiler.

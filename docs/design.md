@@ -27,7 +27,9 @@ The purpose of this document is:
             1. activate "Milk Mode" & call-up pressure for frothing milk
         - **Long press (3 seconds):** 
             - enter or exit programming mode for frothing milk
-- 1 rocker swtich for controlling the power state
+    - Button 1 + 2:
+        - **Long press (3 seconds):** 
+            1. Change measurement units
 - 1 multi-function rotary encoder
     - If in Espresso or Milk modes:
         - deactivate current program
@@ -36,9 +38,17 @@ The purpose of this document is:
         - adjusts memory setting for relevant program
     
 ## GUI
-Block diagram of interface
+#### Block diagram of interface
 
 ![Block diagram of koffie interface](images/koffie_block_diagram_gui.jpeg)
 
-## Bonus features
-> WIP for extra feature implementation, such as group head pressure during extraction.
+#### Populated block diagram interface
+
+![Block diagram of koffie interface](images/populated_koffie_block_diagram_gui.jpeg)
+- A signle mode is illuminated when activated
+    - When in "programming mode," the corresponding parent mode will flash
+- Temperatures are displayed, if available
+    - if no probe is connected, `N/C` is displayed
+
+## Bonus features / nice to haves
+- Configurable to display units in Science & Frankenstien
