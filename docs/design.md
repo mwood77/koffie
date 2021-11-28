@@ -8,7 +8,7 @@ The purpose of this document is:
 
 ## Program modes
 1. Espresso - low pressure for extracting espresso
-1. Milk - high pressure for extracting milk
+1. Milk - high pressure for frothing milk
 1. Manual - "on the fly" pressure adjustment
 1. Programming - modifier which adjusts the save-state for Espresso or Milk modes
 1. Reset - returns Espresso and Milk modes back to default values
@@ -30,7 +30,8 @@ The purpose of this document is:
 - 1 rocker swtich for controlling the power state
 - 1 multi-function rotary encoder
     - If in Espresso or Milk modes:
-        - Enter "Manual Mode," and enable on-the-fly boiler pressure adjustment
+        - deactivate current program
+        - activate "Manual Mode," and enable on-the-fly boiler pressure adjustment
     - If in programming mode:
         - adjusts memory setting for relevant program
     
