@@ -192,10 +192,10 @@ static void printMode(int mode) {
     case 1:
       Serial.println("Programming mode enabled");
       break;
-    case 4:
+    case 6:
       Serial.println("Set High Pressure - Milk Mode");
       break;
-    case 5:
+    case 7:
       Serial.println("Set Low Pressure - Espresso Mode");
       break;
     case 9999:
