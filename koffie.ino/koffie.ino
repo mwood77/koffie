@@ -13,7 +13,7 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 *
-* You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316601625012601409
+* You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316589477903467072
 *
 */
 #include <SPI.h>
@@ -29,6 +29,7 @@ int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long oldEncoderPosition{-999};
 long threadInterval{700};
+
 Thread timerThread = Thread();
 
 // *************************************************************************************
@@ -38,8 +39,8 @@ Thread timerThread = Thread();
 /*
 * Set which analog pins your temperature probe's signal wire are connected to
 */
-int groupTempPin{A2};
-int boilerTempPin{A3};
+int const groupTempPin{A2};
+int const boilerTempPin{A3};
 const float BETA = 3950;
 
 /*
@@ -110,12 +111,6 @@ void loop() {
   buttonEspresso.tick();
   delay(100);
 
-  if (PROGRAMMING_MODE == 1) {
-    digitalWrite(CURRENT_MODE, LOW);
-    delay(500);
-    digitalWrite(CURRENT_MODE, HIGH);
-  }
-
   long newEncoderPosition = encoder.read();
 
   if (newEncoderPosition != oldEncoderPosition) {
@@ -128,7 +123,6 @@ void loop() {
   }
   
 }
-
 
 // RED BUTTON
 static void handleClickMilk() {
@@ -197,6 +191,17 @@ static void toggleLED(int pin) {
 }
 
 /**
+* Blinks the current mode's LED once
+*
+* @param pin the LED's pin number to toggle ON or OFF.
+*/
+static void blinkLED() {
+    digitalWrite(CURRENT_MODE, LOW);
+    delay(500);
+    digitalWrite(CURRENT_MODE, HIGH);
+}
+
+/**
 * Returns the current byte state (HIGH or LOW) of an LED's pin.
 *
 * @param pin the LED's pin number to check.
@@ -231,6 +236,10 @@ static void printMode(int mode) {
   }
 }
 
+/**
+* Measures the temperature of attached temperature probes.
+* Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
+*/
 static void updateTemps() {
   int groupTemperature = analogRead(groupTempPin);
   int boilerTemperature = analogRead(boilerTempPin);
@@ -240,6 +249,12 @@ static void updateTemps() {
   Serial.print("Boiler Temp:");
   Serial.print(convertTemperatureUnits(boilerTemperature));
   Serial.println(MEASUREMENT_UNIT);
+
+  if (PROGRAMMING_MODE == 1) {
+    digitalWrite(CURRENT_MODE, LOW);
+    delay(250);
+    digitalWrite(CURRENT_MODE, HIGH);
+  }
 }
 
 /**
