@@ -23,10 +23,13 @@
 #include <Adafruit_SSD1306.h>
 
 #include "bitmaps.h"
+#include "Thread.h"
 
 int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long oldEncoderPosition{-999};
+long threadInterval{700};
+Thread timerThread = Thread();
 
 // *************************************************************************************
 // ********************************* CONFIGURABLES *************************************
@@ -94,8 +97,11 @@ void setup() {
   
   buttonEspresso.attachClick(handleClickEspresso);
   buttonEspresso.attachLongPressStart(enableProgrammingMode);
+
+  timerThread.onRun(updateTemps);
+  timerThread.setInterval(threadInterval);
   
-  initialize();                     // initializes the state as "espresso" on boot
+  initialize();                     // initializes the state as "espresso"
 
 }
 
@@ -115,6 +121,10 @@ void loop() {
   if (newEncoderPosition != oldEncoderPosition) {
     oldEncoderPosition = newEncoderPosition;
     Serial.println(newEncoderPosition);
+  }
+
+  if (timerThread.shouldRun()) {
+    timerThread.run();
   }
   
 }
