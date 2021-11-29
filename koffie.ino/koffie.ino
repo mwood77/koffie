@@ -13,7 +13,7 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 *
-* You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316589477903467072
+* You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316601625012601409
 *
 */
 #include <SPI.h>
@@ -173,6 +173,7 @@ static void initializeDisplay() {
   display.clearDisplay();
   delay(2000);
   display.display();
+  drawGuiWireframe();
 }
 
 static void enableProgrammingMode() {
@@ -276,4 +277,31 @@ static int convertTemperatureUnits(int mV) {
       return celsius + 273.15;
       break;
   }
+}
+
+
+static void drawGuiWireframe() {
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  display.drawRoundRect(2, 2, 40, 14, 4, WHITE);
+  display.drawRoundRect(44, 2, 40, 14, 4, WHITE);
+  display.drawRoundRect(86, 2, 40, 14, 4, WHITE);
+  
+  display.drawLine(0, 19, display.width(), 19, WHITE);
+  display.drawLine(64, 19, 64, display.height(), WHITE);
+
+  display.setCursor(10, 6);
+  display.println("ESPR");
+  display.setCursor(52, 6);
+  display.println("MILK");
+  display.setCursor(94, 6);
+  display.println("MANU");
+
+  display.setCursor(2, 22);
+  display.println("GROUP");
+  display.setCursor(2, 42);
+  display.println("BOILER");
+
+  display.display();
 }
