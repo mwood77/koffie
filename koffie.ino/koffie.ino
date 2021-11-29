@@ -279,7 +279,6 @@ static int convertTemperatureUnits(int mV) {
   }
 }
 
-
 static void drawGuiWireframe() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -298,10 +297,35 @@ static void drawGuiWireframe() {
   display.setCursor(94, 6);
   display.println("MANU");
 
-  display.setCursor(2, 22);
-  display.println("GROUP");
-  display.setCursor(2, 42);
-  display.println("BOILER");
+  display.setCursor(10, 28);
+  display.println("GRP");
+  display.setCursor(10, 48);
+  display.println("BLR");
+  
+  display.setCursor(108, 54);
+  display.println("BAR");
 
+  display.display();
+  drawTemperatures();
+  drawPressure();
+}
+
+static void drawTemperatures() {
+  display.setCursor(40, 28);
+  display.print("88");
+  display.print(MEASUREMENT_UNIT);
+  
+  display.setCursor(40, 48);
+  display.print("88");
+  display.print(MEASUREMENT_UNIT);
+  
+  display.display();
+}
+
+static void drawPressure() {
+  display.setTextSize(2);
+  display.setCursor(74, 35);
+  display.println("0.88");
+  
   display.display();
 }
