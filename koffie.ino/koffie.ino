@@ -28,7 +28,7 @@
 int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long oldEncoderPosition{-999};
-long threadInterval{700};
+long const threadInterval{700};
 
 Thread timerThread = Thread();
 
@@ -41,7 +41,7 @@ Thread timerThread = Thread();
 */
 int const groupTempPin{A2};
 int const boilerTempPin{A3};
-const float BETA = 3950;
+const float BETA = 3950;        // This must be set to the beta Coefficient of you thermistor(s), usually 3000-4000
 
 /*
 * Set which unit of measure you want to display.
@@ -124,7 +124,9 @@ void loop() {
   
 }
 
-// RED BUTTON
+/**
+* RED BUTTON IN EMULATOR
+*/
 static void handleClickMilk() {
   if (checkStateLED(ESPRESSO_LED) == HIGH) {
     toggleLED(ESPRESSO_LED);
@@ -138,7 +140,9 @@ static void handleClickMilk() {
   printMode(MILK_LED);
 }
 
-// BLUE BUTTON
+/**
+* BLUE BUTTON IN EMULATOR
+*/
 static void handleClickEspresso() {
   if (checkStateLED(MILK_LED) == HIGH) {
     toggleLED(MILK_LED);
@@ -154,7 +158,16 @@ static void handleClickEspresso() {
 }
 
 /**
-* Configures operation mode
+* Toggles programming mode modifier
+*/
+static void enableProgrammingMode() {
+  PROGRAMMING_MODE = !PROGRAMMING_MODE;
+  printMode(PROGRAMMING_MODE);
+}
+
+
+/**
+* Configures operation mode and static gui elements
 */
 static void initialize() {
   CURRENT_MODE = ESPRESSO_LED;
@@ -174,11 +187,6 @@ static void initializeDisplay() {
   delay(2000);
   display.display();
   drawGuiWireframe();
-}
-
-static void enableProgrammingMode() {
-  PROGRAMMING_MODE = !PROGRAMMING_MODE;
-  printMode(PROGRAMMING_MODE);
 }
 
 /**
@@ -242,13 +250,17 @@ static void printMode(int mode) {
 * Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
 */
 static void updateTemps() {
-  int groupTemperature = analogRead(groupTempPin);
-  int boilerTemperature = analogRead(boilerTempPin);
+  int const group = analogRead(groupTempPin);
+  int const boiler = analogRead(boilerTempPin);
+
+  int const groupTemperature = convertTemperatureUnits(group);
+  int const boilerTemperature = convertTemperatureUnits(boiler);
+
   Serial.print("Group Temp:");
-  Serial.print(convertTemperatureUnits(groupTemperature));
+  Serial.print(groupTemperature);
   Serial.println(MEASUREMENT_UNIT);
   Serial.print("Boiler Temp:");
-  Serial.print(convertTemperatureUnits(boilerTemperature));
+  Serial.print(boilerTemperature);
   Serial.println(MEASUREMENT_UNIT);
 
   if (PROGRAMMING_MODE == 1) {
@@ -256,6 +268,8 @@ static void updateTemps() {
     delay(250);
     digitalWrite(CURRENT_MODE, HIGH);
   }
+
+  drawTemperatures(groupTemperature, boilerTemperature);
 }
 
 /**
@@ -279,6 +293,9 @@ static int convertTemperatureUnits(int mV) {
   }
 }
 
+/**
+* Draws all static elements of the GUI
+*/
 static void drawGuiWireframe() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -305,23 +322,32 @@ static void drawGuiWireframe() {
   display.setCursor(108, 54);
   display.println("BAR");
 
+  display.setTextColor(WHITE, BLACK);     // Prepare for continuous data overwrite
+
   display.display();
-  drawTemperatures();
+
   drawPressure();
 }
 
-static void drawTemperatures() {
+/**
+* Draws temperature values on screen - called in protothread
+*/
+static void drawTemperatures(int groupTemp, int boilerTemp) {
+  display.setTextSize(1);
   display.setCursor(40, 28);
-  display.print("88");
+  display.print(groupTemp);
   display.print(MEASUREMENT_UNIT);
   
   display.setCursor(40, 48);
-  display.print("88");
+  display.print(boilerTemp);
   display.print(MEASUREMENT_UNIT);
   
   display.display();
 }
 
+/**
+* Draws temperature values on screen - called in protothread
+*/
 static void drawPressure() {
   display.setTextSize(2);
   display.setCursor(74, 35);
