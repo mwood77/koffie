@@ -27,7 +27,7 @@
 
 int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
-long oldEncoderPosition{-999};
+long oldEncoderPosition{0};
 long const threadInterval{700};
 
 Thread timerThread = Thread();
@@ -109,14 +109,8 @@ void setup() {
 void loop() {
   buttonMilk.tick();
   buttonEspresso.tick();
+  handleEncoder();
   delay(100);
-
-  long newEncoderPosition = encoder.read();
-
-  if (newEncoderPosition != oldEncoderPosition) {
-    oldEncoderPosition = newEncoderPosition;
-    Serial.println(newEncoderPosition);
-  }
 
   if (timerThread.shouldRun()) {
     timerThread.run();
@@ -125,7 +119,23 @@ void loop() {
 }
 
 /**
+* Handles encoder functionality if movement detected
+*/
+static void handleEncoder() {
+  long newEncoderPosition = encoder.read();
+
+  if (newEncoderPosition != oldEncoderPosition) {
+    CURRENT_MODE = 25;
+    oldEncoderPosition = newEncoderPosition;
+    Serial.println(newEncoderPosition);
+    drawActiveMode(CURRENT_MODE);
+  }
+}
+
+/**
 * RED BUTTON IN EMULATOR
+*
+* Handles buttons functionality for Milk
 */
 static void handleClickMilk() {
   if (checkStateLED(ESPRESSO_LED) == HIGH) {
@@ -137,11 +147,15 @@ static void handleClickMilk() {
   if (checkStateLED(MILK_LED) == LOW) {
     toggleLED(MILK_LED);
   }
+
   printMode(MILK_LED);
+  drawActiveMode(CURRENT_MODE);
 }
 
 /**
 * BLUE BUTTON IN EMULATOR
+*
+* Handles buttons functionality for Espresso
 */
 static void handleClickEspresso() {
   if (checkStateLED(MILK_LED) == HIGH) {
@@ -155,6 +169,7 @@ static void handleClickEspresso() {
   }
   
   printMode(ESPRESSO_LED);
+  drawActiveMode(CURRENT_MODE);
 }
 
 /**
@@ -164,7 +179,6 @@ static void enableProgrammingMode() {
   PROGRAMMING_MODE = !PROGRAMMING_MODE;
   printMode(PROGRAMMING_MODE);
 }
-
 
 /**
 * Configures operation mode and static gui elements
@@ -239,6 +253,9 @@ static void printMode(int mode) {
     case 7:
       Serial.println("Set Low Pressure - Espresso Mode");
       break;
+    case 25:
+      Serial.println("Manual Mode Enabled");
+      break;
     case 9999:
       Serial.println("Koffie Initialized");    
       break;
@@ -267,6 +284,7 @@ static void updateTemps() {
     digitalWrite(CURRENT_MODE, LOW);
     delay(250);
     digitalWrite(CURRENT_MODE, HIGH);
+    drawActiveMode(CURRENT_MODE);
   }
 
   drawTemperatures(groupTemperature, boilerTemperature);
@@ -322,18 +340,18 @@ static void drawGuiWireframe() {
   display.setCursor(108, 54);
   display.println("BAR");
 
-  display.setTextColor(WHITE, BLACK);     // Prepare for continuous data overwrite
+  display.setTextColor(WHITE, BLACK);     // Prepare for overwriting data
 
   display.display();
 
   drawPressure();
+  drawActiveMode(CURRENT_MODE);
 }
 
 /**
 * Draws temperature values on screen - called in protothread
 */
 static void drawTemperatures(int groupTemp, int boilerTemp) {
-  display.setTextSize(1);
   display.setCursor(40, 28);
   display.print(groupTemp);
   display.print(MEASUREMENT_UNIT);
@@ -354,4 +372,59 @@ static void drawPressure() {
   display.println("0.88");
   
   display.display();
+  display.setTextSize(1);
+}
+
+/**
+* Draws corrent mode as a filled in rectangle
+*/
+static void drawModes() {
+
+  display.fillRect(0, 0, 128, 14, BLACK);         // Clear modes area
+
+  display.drawRoundRect(2, 2, 40, 14, 4, WHITE);
+  display.drawRoundRect(44, 2, 40, 14, 4, WHITE);
+  display.drawRoundRect(86, 2, 40, 14, 4, WHITE);
+
+  display.setTextColor(WHITE);
+
+  display.setCursor(10, 6);
+  display.println("ESPR");
+  display.setCursor(52, 6);
+  display.println("MILK");
+  display.setCursor(94, 6);
+  display.println("MANU");
+  
+  display.display();
+
+}
+
+/**
+* Draws current mode as a filled rectangle
+*/
+static void drawActiveMode(int activeMode) {
+
+  drawModes();
+  display.setTextColor(BLACK);
+
+  switch(activeMode) {
+    case 6:
+      display.fillRoundRect(44, 2, 40, 14, 4, WHITE);
+      display.setCursor(52, 6);
+      display.println("MILK");
+      break;
+    case 7:
+      display.fillRoundRect(2, 2, 40, 14, 4, WHITE);
+      display.setCursor(10, 6);
+      display.println("ESPR");
+      break;
+    case 25:
+      display.fillRoundRect(86, 2, 40, 14, 4, WHITE);
+      display.setCursor(94, 6);
+      display.println("MANU");
+      break;
+  }
+  
+  display.display();
+  display.setTextColor(WHITE);
 }
