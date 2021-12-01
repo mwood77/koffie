@@ -301,6 +301,7 @@ static void updateTemps() {
   }
 
   drawTemperatures(groupTemperature, boilerTemperature);
+  drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
 }
 
 /**
@@ -357,7 +358,6 @@ static void drawGuiWireframe() {
 
   display.display();
 
-  drawPressure();
   drawActiveMode(CURRENT_MODE);
 }
 
@@ -377,15 +377,21 @@ static void drawTemperatures(int groupTemp, int boilerTemp) {
 }
 
 /**
-* Draws temperature values on screen - called in protothread
+* Draws pressure values on screen - called in protothread
+*
+* @param pressure float, pressure in units (not mV)
+* @param programmingMode int, takes global variable PROGRAMMING_MODE
 */
-static void drawPressure() {
+static void drawPressure(float pressure, int programmingMode) {
   display.setTextSize(2);
   display.setCursor(74, 35);
-  display.println("0.88");
+  display.println(pressure);
+  display.setTextSize(1);
+  display.setCursor(108, 54);
+  display.println("BAR");
   
   display.display();
-  display.setTextSize(1);
+
 }
 
 /**
