@@ -354,10 +354,6 @@ static void drawGuiWireframe() {
   display.setCursor(108, 54);
   display.println("BAR");
 
-  display.setTextColor(WHITE, BLACK);     // Prepare for overwriting data
-
-  display.display();
-
   drawActiveMode(CURRENT_MODE);
 }
 
@@ -365,6 +361,10 @@ static void drawGuiWireframe() {
 * Draws temperature values on screen - called in protothread
 */
 static void drawTemperatures(int groupTemp, int boilerTemp) {
+    
+  display.fillRect(40, 24, 24, 64, BLACK);         // Clear modes area
+  display.setTextColor(WHITE, BLACK);     // Prepare for overwriting data
+
   display.setCursor(40, 28);
   display.print(groupTemp);
   display.print(MEASUREMENT_UNIT);
