@@ -122,13 +122,24 @@ void loop() {
 * Handles encoder functionality if movement detected
 */
 static void handleEncoder() {
+  int const manualMode{25};
   long newEncoderPosition = encoder.read();
 
   if (newEncoderPosition != oldEncoderPosition) {
-    CURRENT_MODE = 25;
+    if ( CURRENT_MODE != manualMode ) {
+      CURRENT_MODE = manualMode;
+      drawActiveMode(CURRENT_MODE);
+
+      if (checkStateLED(ESPRESSO_LED) == HIGH) {
+        toggleLED(ESPRESSO_LED);
+      }
+
+      if (checkStateLED(MILK_LED) == HIGH) {
+        toggleLED(MILK_LED);
+      }
+    }
     oldEncoderPosition = newEncoderPosition;
     Serial.println(newEncoderPosition);
-    drawActiveMode(CURRENT_MODE);
   }
 }
 
@@ -176,8 +187,10 @@ static void handleClickEspresso() {
 * Toggles programming mode modifier
 */
 static void enableProgrammingMode() {
-  PROGRAMMING_MODE = !PROGRAMMING_MODE;
-  printMode(PROGRAMMING_MODE);
+  if (CURRENT_MODE != 25 ) {
+    PROGRAMMING_MODE = !PROGRAMMING_MODE;
+    printMode(PROGRAMMING_MODE);
+  }
 }
 
 /**
