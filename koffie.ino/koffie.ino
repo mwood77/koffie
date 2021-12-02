@@ -18,6 +18,7 @@
 */
 #include <SPI.h>
 #include <Wire.h>
+#include <EEPROM.h>
 #include <Encoder.h>
 #include <OneButton.h>
 #include <Adafruit_SSD1306.h>
@@ -27,8 +28,9 @@
 
 int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
-long oldEncoderPosition{0};
-long const threadInterval{700};
+long OLD_ENCODER_POSITION{0};
+long const THREAD_INTERVAL{700};
+int const EPROM_PID_SETTINGS_ADDRESS{0};
 
 Thread timerThread = Thread();
 
@@ -39,9 +41,9 @@ Thread timerThread = Thread();
 /*
 * Set which analog pins your temperature probe's signal wire are connected to
 */
-int const groupTempPin{A2};
-int const boilerTempPin{A3};
-const float BETA = 3950;        // This must be set to the beta Coefficient of you thermistor(s), usually 3000-4000
+int const GROUP_TEMP_PIN{A2};
+int const BOILER_TEMP_PIN{A3};
+const float BETA = 3950;        // This must be set to the beta Coefficient of you thermistor(temperature probe), usually 3000-4000
 
 /*
 * Set which unit of measure you want to display.
@@ -100,7 +102,7 @@ void setup() {
   buttonEspresso.attachLongPressStart(enableProgrammingMode);
 
   timerThread.onRun(updateTemps);
-  timerThread.setInterval(threadInterval);
+  timerThread.setInterval(THREAD_INTERVAL);
   
   initialize();                     // initializes the state as "espresso"
 
@@ -125,7 +127,7 @@ static void handleEncoder() {
   int const manualMode{25};
   long newEncoderPosition = encoder.read();
 
-  if (newEncoderPosition != oldEncoderPosition) {
+  if (newEncoderPosition != OLD_ENCODER_POSITION) {
     if ( CURRENT_MODE != manualMode ) {
       CURRENT_MODE = manualMode;
       drawActiveMode(CURRENT_MODE);
@@ -138,7 +140,7 @@ static void handleEncoder() {
         toggleLED(MILK_LED);
       }
     }
-    oldEncoderPosition = newEncoderPosition;
+    OLD_ENCODER_POSITION = newEncoderPosition;
     Serial.println(newEncoderPosition);
   }
 }
@@ -280,8 +282,8 @@ static void printMode(int mode) {
 * Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
 */
 static void updateTemps() {
-  int const group = analogRead(groupTempPin);
-  int const boiler = analogRead(boilerTempPin);
+  int const group = analogRead(GROUP_TEMP_PIN);
+  int const boiler = analogRead(BOILER_TEMP_PIN);
 
   int const groupTemperature = convertTemperatureUnits(group);
   int const boilerTemperature = convertTemperatureUnits(boiler);
