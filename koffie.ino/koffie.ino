@@ -34,8 +34,23 @@ int const EPROM_PID_SETTINGS_ADDRESS{0};
 
 Thread timerThread = Thread();
 
+/*
+* Treat as imputable values, which will not change or be overwritten
+*/
+struct DEFAULT_TEMPERATURE_SETTINGS {
+  float espresso;
+  float milk;
+};
+
+/*
+* Instantiate mutable temperature object
+*/
+struct DEFAULT_TEMPERATURE_SETTINGS customTemperatures;
+
+
+
 // *************************************************************************************
-// ********************************* CONFIGURABLES *************************************
+// ****************************** BEGIN CONFIGURABLES **********************************
 // *************************************************************************************
 
 /*
