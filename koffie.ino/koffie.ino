@@ -26,32 +26,47 @@
 #include "bitmaps.h"
 #include "Thread.h"
 
+unsigned int EEPROM_PRESSURE_ADDRESS = 0;
+
 int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long OLD_ENCODER_POSITION{0};
-long const THREAD_INTERVAL{700};
-int const EPROM_PID_SETTINGS_ADDRESS{0};
+long const THREAD_INTERVAL{1000};
 
 Thread timerThread = Thread();
 
 /*
-* Treat as imputable values, which will not change or be overwritten
+* Data Model
 */
-struct DEFAULT_TEMPERATURE_SETTINGS {
+struct PRESSURE_SETTINGS {
   float espresso;
   float milk;
 };
 
 /*
-* Instantiate mutable temperature object
+* Default pressure values in BAR
 */
-struct DEFAULT_TEMPERATURE_SETTINGS customTemperatures;
+static PRESSURE_SETTINGS defaultPressures = {
+  0.75f, 
+  0.9f
+};
 
+/*
+* Instantiate object for user's programmable temperature values
+*/
+PRESSURE_SETTINGS usersDesiredTemperatures;
 
 
 // *************************************************************************************
 // ****************************** BEGIN CONFIGURABLES **********************************
 // *************************************************************************************
+
+/*
+* Set to TRUE if you want to see status messages in the serial monitor
+*
+* WARNING: CAN CAUSE MEMORY OVERFLOW ISSUES (SEE BOTTOM RIGHT CORNER OF OLED)
+*/
+boolean const DEBUG{false};
 
 /*
 * Set which analog pins your temperature probe's signal wire are connected to
@@ -71,14 +86,14 @@ char const MEASUREMENT_UNIT{'C'};
 
 /*
 * A0 = to the pin your switch is wired to, set it to whatever ANALOG pin you've wired your switch into
-* MILK_LED{4} = the positive side of your LED, set "4" to the pin your LED is wired to
+* MILK_LED{6} = the positive side of your LED, set "4" to the pin your LED is wired to
 */
 OneButton buttonMilk(A0, true);
 int const MILK_LED{6};
 
 /*
 * A1 = to the pin your switch is wired to, set it to whatever ANALOG pin you've wired your switch into
-* ESPRESSO_LED{5} = the positive side of your LED, set "5" to the pin your LED is wired to
+* ESPRESSO_LED{7} = the positive side of your LED, set "5" to the pin your LED is wired to
 */
 OneButton buttonEspresso(A1, true);
 int const ESPRESSO_LED{7};
@@ -118,6 +133,8 @@ void setup() {
 
   timerThread.onRun(updateTemps);
   timerThread.setInterval(THREAD_INTERVAL);
+
+  checkEepromState();
   
   initialize();                     // initializes the state as "espresso"
 
@@ -133,6 +150,22 @@ void loop() {
     timerThread.run();
   }
   
+}
+
+static void checkEepromState() {
+  PRESSURE_SETTINGS result;
+
+  if (EEPROM.read(EEPROM_PRESSURE_ADDRESS) == 255) {
+    Serial.println("First run - saving defaults");
+    EEPROM.put(EEPROM_PRESSURE_ADDRESS, defaultPressures);
+  } 
+
+  result = EEPROM.get(EEPROM_PRESSURE_ADDRESS, result);
+  Serial.println(result.espresso);
+  Serial.println(result.milk);
+
+  usersDesiredTemperatures = result;
+ 
 }
 
 /**
@@ -196,7 +229,7 @@ static void handleClickEspresso() {
     toggleLED(ESPRESSO_LED);
   }
   
-  printMode(ESPRESSO_LED);
+  printMode(ESPRESSO_LED);    
   drawActiveMode(CURRENT_MODE);
 }
 
@@ -270,25 +303,27 @@ static byte checkStateLED(int pin) {
 * @param mode integer, the current mode (typically the LED pin)
 */
 static void printMode(int mode) {
-  switch(mode) {
-    case 0:
-      Serial.println("Programming mode disabled");
-      break;
-    case 1:
-      Serial.println("Programming mode enabled");
-      break;
-    case 6:
-      Serial.println("Set High Pressure - Milk Mode");
-      break;
-    case 7:
-      Serial.println("Set Low Pressure - Espresso Mode");
-      break;
-    case 25:
-      Serial.println("Manual Mode Enabled");
-      break;
-    case 9999:
-      Serial.println("Koffie Initialized");    
-      break;
+  if (DEBUG) {
+    switch(mode) {
+      case 0:
+        Serial.println("Programming mode disabled");
+        break;
+      case 1:
+        Serial.println("Programming mode enabled");
+        break;
+      case 6:
+        Serial.println("Set High Pressure - Milk Mode");
+        break;
+      case 7:
+        Serial.println("Set Low Pressure - Espresso Mode");
+        break;
+      case 25:
+        Serial.println("Manual Mode Enabled");
+        break;
+      case 9999:
+        Serial.println("Koffie Initialized");    
+        break;
+    }
   }
 }
 
@@ -303,17 +338,17 @@ static void updateTemps() {
   int const groupTemperature = convertTemperatureUnits(group);
   int const boilerTemperature = convertTemperatureUnits(boiler);
 
-  Serial.print("Group Temp:");
-  Serial.print(groupTemperature);
-  Serial.println(MEASUREMENT_UNIT);
-  Serial.print("Boiler Temp:");
-  Serial.print(boilerTemperature);
-  Serial.println(MEASUREMENT_UNIT);
+  if (DEBUG) {
+    Serial.print("Group Temp:");
+    Serial.print(groupTemperature);
+    Serial.println(MEASUREMENT_UNIT);
+    Serial.print("Boiler Temp:");
+    Serial.print(boilerTemperature);
+    Serial.println(MEASUREMENT_UNIT);
+  }
 
   if (PROGRAMMING_MODE == 1) {
-    digitalWrite(CURRENT_MODE, LOW);
-    delay(250);
-    digitalWrite(CURRENT_MODE, HIGH);
+    toggleLED(CURRENT_MODE);
     drawActiveMode(CURRENT_MODE);
   }
 
@@ -399,13 +434,28 @@ static void drawTemperatures(int groupTemp, int boilerTemp) {
 * @param pressure float, pressure in units (not mV)
 * @param programmingMode int, takes global variable PROGRAMMING_MODE
 */
-static void drawPressure(float pressure, int programmingMode) {
-  display.setTextSize(2);
-  display.setCursor(74, 35);
-  display.println(pressure);
-  display.setTextSize(1);
-  display.setCursor(108, 54);
-  display.println("BAR");
+static void drawPressure(double pressure, int programmingMode) {
+
+  display.fillRect(66, 20, 62, 64, BLACK);
+
+  if (CURRENT_MODE == 25) {
+    display.setCursor(70, 28);
+    display.print("TARG ");
+    display.print(pressure);
+    
+    display.setCursor(70, 48);
+    display.print("ACTL ");
+    display.print(pressure);
+
+  } else {
+    display.setTextSize(2);
+    display.setCursor(74, 35);
+    display.print(pressure);
+
+    display.setTextSize(1);
+    display.setCursor(108, 54);
+    display.print("BAR");
+  }
   
   display.display();
 
