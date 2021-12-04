@@ -23,16 +23,16 @@
 #include <OneButton.h>
 #include <Adafruit_SSD1306.h>
 
-#include "bitmaps.h"
+#include "Thread.h"
 
 unsigned int EEPROM_PRESSURE_ADDRESS = 0;
 
-unsigned long CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
-bool PROGRAMMING_MODE = false;              // PROGRAMMING MODE FLAG
+int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
+bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long OLD_ENCODER_POSITION{0};
+long const THREAD_INTERVAL{1000};
 
-int period = 1000;
-unsigned long time_now = 0;
+Thread timerThread = Thread();
 
 /*
 * Data Model
@@ -94,7 +94,7 @@ int const ESPRESSO_LED{7};
 * 2 = the DT pin your encoder is wired to
 * 3 = the CLK pin your encoder is wired to
 */
-Encoder encoder(2, 3);
+Encoder encoder(3, 2);
 
 /*
 * Set the screen width and heigh here. If you bought the OLED listed in the documentation, there's no need
@@ -124,6 +124,9 @@ void setup() {
   buttonEspresso.attachClick(handleClickEspresso);
   buttonEspresso.attachLongPressStart(enableProgrammingMode);
 
+  timerThread.onRun(updateTemps);
+  timerThread.setInterval(THREAD_INTERVAL);
+
   checkEepromState();
   
   initialize();                     // initializes the state as "espresso"
@@ -131,37 +134,17 @@ void setup() {
 }
 
 void loop() {
-  
   buttonMilk.tick();
   buttonEspresso.tick();
   handleEncoder();
+  delay(100);
 
-  if( millis() - time_now > period ){
-    time_now = millis();
-
-    updateTemperatures();
-    delay(200);
-    drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
-    delay(200);
-
-    display.display();
-    Serial.println(2048 - freeRam());         // check existing ram availability
+  if (timerThread.shouldRun()) {
+    timerThread.run();
   }
   
 }
 
-/**
-* Returns available RAM
-*/
-static int freeRam() {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
-}
-
-/**
-* Checks if default values are stored in EEPROM; saves values if they do not exist
-*/
 static void checkEepromState() {
   PRESSURE_SETTINGS result;
 
@@ -237,7 +220,7 @@ static void handleClickEspresso() {
   if (checkStateLED(ESPRESSO_LED) == LOW) {
     toggleLED(ESPRESSO_LED);
   }
-  
+ 
   drawActiveMode(CURRENT_MODE);
 }
 
@@ -247,6 +230,11 @@ static void handleClickEspresso() {
 static void enableProgrammingMode() {
   if (CURRENT_MODE != 25 ) {
     PROGRAMMING_MODE = !PROGRAMMING_MODE;
+    
+    if (checkStateLED(CURRENT_MODE) == LOW) {
+      toggleLED(CURRENT_MODE);
+    }
+
   }
 }
 
@@ -264,12 +252,7 @@ static void initialize() {
 */
 static void initializeDisplay() {
   display.clearDisplay();
-  display.drawBitmap(0, 0, bootLogo, 128, 64, WHITE);
-  display.display();
-  display.clearDisplay();
-  delay(2000);
-  display.clearDisplay();
-  drawGuiWireframe();
+  drawStaticGUI();
 }
 
 /**
@@ -307,27 +290,25 @@ static byte checkStateLED(int pin) {
 * Measures the temperature of attached temperature probes.
 * Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
 */
-static void updateTemperatures() {
-
+static void updateTemps() {
+  
 	digitalWrite(LED_BUILTIN, HIGH); 
 
+  int const group = analogRead(GROUP_TEMP_PIN);
+  int const boiler = analogRead(BOILER_TEMP_PIN);
 
-  unsigned long const group = analogRead(GROUP_TEMP_PIN);
-  unsigned long const boiler = analogRead(BOILER_TEMP_PIN);
-
-  unsigned long groupTemperature = convertTemperatureUnits(group);
-  unsigned long boilerTemperature = convertTemperatureUnits(boiler);
+  int const groupTemperature = convertTemperatureUnits(group);
+  int const boilerTemperature = convertTemperatureUnits(boiler);
 
   if (PROGRAMMING_MODE == 1) {
     toggleLED(CURRENT_MODE);
     drawActiveMode(CURRENT_MODE);
   }
 
-  delay(200);
-
   drawTemperatures(groupTemperature, boilerTemperature);
-  
-  digitalWrite(LED_BUILTIN, LOW); 
+  drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
+
+	digitalWrite(LED_BUILTIN, LOW); 
 }
 
 /**
@@ -337,7 +318,7 @@ static void updateTemperatures() {
 * @return int the number converted to the desired units
 */
 static int convertTemperatureUnits(int mV) {
-  unsigned long celsius = 1 / (log(1 / (1023. / mV - 1)) / BETA + 1.0 / 298.15) - 273.15;
+  float celsius = 1 / (log(1 / (1023. / mV - 1)) / BETA + 1.0 / 298.15) - 273.15;
   switch(MEASUREMENT_UNIT) {
     case 'C':
       return celsius;
@@ -354,7 +335,7 @@ static int convertTemperatureUnits(int mV) {
 /**
 * Draws all static elements of the GUI
 */
-static void drawGuiWireframe() {
+static void drawStaticGUI() {
   display.clearDisplay();
 
   display.setTextSize(1);
@@ -364,10 +345,13 @@ static void drawGuiWireframe() {
   display.drawLine(64, 19, 64, display.height(), WHITE);
 
   display.setCursor(10, 28);
-  display.print(F("GRP"));
+  display.println(F("GRP"));
   display.setCursor(10, 48);
-  display.print(F("BLR"));
+  display.println(F("BLR"));
   
+  display.setCursor(108, 54);
+  display.println(F("BAR"));
+
   drawActiveMode(CURRENT_MODE);
 }
 
@@ -375,8 +359,9 @@ static void drawGuiWireframe() {
 * Draws temperature values on screen - called in protothread
 */
 static void drawTemperatures(int groupTemp, int boilerTemp) {
-  display.fillRect(40, 24, 24, 64, BLACK);          // Clear modes area
-  display.setTextColor(WHITE, BLACK);               // Prepare for overwriting data
+    
+  display.fillRect(40, 24, 24, 64, BLACK);         // Clear modes area
+  display.setTextColor(WHITE, BLACK);              // Prepare for overwriting data
 
   display.setCursor(40, 28);
   display.print(groupTemp);
@@ -385,6 +370,7 @@ static void drawTemperatures(int groupTemp, int boilerTemp) {
   display.setCursor(40, 48);
   display.print(boilerTemp);
   display.print(MEASUREMENT_UNIT);
+  
 }
 
 /**
@@ -405,6 +391,7 @@ static void drawPressure(double pressure, int programmingMode) {
     display.setCursor(70, 48);
     display.print(F("ACTL "));
     display.print(pressure);
+
   } else {
     display.setTextSize(2);
     display.setCursor(74, 35);
@@ -414,6 +401,8 @@ static void drawPressure(double pressure, int programmingMode) {
     display.setCursor(108, 54);
     display.print(F("BAR"));
   }
+  
+  display.display();
 
 }
 
@@ -431,11 +420,11 @@ static void drawModes() {
   display.setTextColor(WHITE);
 
   display.setCursor(10, 6);
-  display.print(F("ESPR"));
+  display.println(F("ESPR"));
   display.setCursor(52, 6);
-  display.print(F("MILK"));
+  display.println(F("MILK"));
   display.setCursor(94, 6);
-  display.print(F("MANU"));
+  display.println(F("MANU"));
 
 }
 
@@ -451,20 +440,19 @@ static void drawActiveMode(int activeMode) {
     case 6:
       display.fillRoundRect(44, 2, 40, 14, 4, WHITE);
       display.setCursor(52, 6);
-      display.print(F("MILK"));
+      display.println(F("MILK"));
       break;
     case 7:
       display.fillRoundRect(2, 2, 40, 14, 4, WHITE);
       display.setCursor(10, 6);
-      display.print(F("ESPR"));
+      display.println(F("ESPR"));
       break;
     case 25:
       display.fillRoundRect(86, 2, 40, 14, 4, WHITE);
       display.setCursor(94, 6);
-      display.print(F("MANU"));
+      display.println(F("MANU"));
       break;
   }
   
-  display.display();
   display.setTextColor(WHITE);
 }
