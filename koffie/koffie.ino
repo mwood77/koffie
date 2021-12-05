@@ -23,6 +23,7 @@
 #include <OneButton.h>
 #include <Adafruit_SSD1306.h>
 
+#include "PID_v1.h"
 #include "Thread.h"
 
 unsigned int EEPROM_PRESSURE_ADDRESS = 0;
