@@ -32,8 +32,10 @@ int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long OLD_ENCODER_POSITION{0};
 long const THREAD_INTERVAL{1000};
-
-Thread timerThread = Thread();
+double SETPOINT;                   // declare and initialize PID variables
+double KP{2};                      // declare and initialize PID variables
+double KI{5};                      // declare and initialize PID variables
+double KD{1};                      // declare and initialize PID variables
 
 /*
 * Data Model
@@ -62,7 +64,16 @@ PRESSURE_SETTINGS usersDesiredTemperatures;
 // *************************************************************************************
 
 /*
-* Set which analog pins your temperature probe's signal wire are connected to
+* Set which digital pin your PRESSURE probe's signal wire is connected to.
+* Set which digital pin your RELAY's signal wire is connected to.
+*
+* This is critical for the relay control
+*/
+double const PID__PRESSURE_SENSOR_INPUT{12};
+double const PID__RELAY_CONTROL_OUTPUT{13};
+
+/*
+* Set which analog pins your TEMPERATURE probe's signal wire(s) are connected to
 */
 int const GROUP_TEMP_PIN{A2};
 int const BOILER_TEMP_PIN{A3};
@@ -104,12 +115,14 @@ Encoder encoder(3, 2);
 int const SCREEN_WIDTH{128};        // OLED display width, in pixels
 int const SCREEN_HEIGHT{64};        // OLED display height, in pixels
 int const OLED_RESET{-1};            // Reset pin 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // *************************************************************************************
 // ******************************* END CONFIGURABLES ***********************************
 // *************************************************************************************
 
+Thread timerThread = Thread();
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+PID pidControl(&PID__PRESSURE_SENSOR_INPUT, &PID__RELAY_CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, DIRECT);
 
 void setup() {
 
@@ -132,6 +145,8 @@ void setup() {
   
   initialize();                     // initializes the state as "espresso"
 
+  pidControl.SetMode(AUTOMATIC);
+
 }
 
 void loop() {
@@ -143,6 +158,8 @@ void loop() {
   if (timerThread.shouldRun()) {
     timerThread.run();
   }
+
+  pidControl.Compute();
   
 }
 
