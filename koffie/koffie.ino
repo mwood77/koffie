@@ -32,10 +32,13 @@ int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
 bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
 long OLD_ENCODER_POSITION{0};
 long const THREAD_INTERVAL{1000};
+double const UPPER_LIMIT{1.0};      // declare and initialize PID variables
+double const LOWER_LIMIT{0.0};      // declare and initialize PID variables
 double SETPOINT;                   // declare and initialize PID variables
 double KP{2};                      // declare and initialize PID variables
 double KI{5};                      // declare and initialize PID variables
 double KD{1};                      // declare and initialize PID variables
+
 
 /*
 * Data Model
@@ -68,9 +71,11 @@ PRESSURE_SETTINGS usersDesiredTemperatures;
 * Set which digital pin your RELAY's signal wire is connected to.
 *
 * This is critical for the relay control
+* 
+* Some good background reading regarding the Arrduino's PWM: https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
 */
 double const PID__PRESSURE_SENSOR_INPUT{12};
-double const PID__RELAY_CONTROL_OUTPUT{13};
+double const PID__RELAY_CONTROL_OUTPUT{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
 
 /*
 * Set which analog pins your TEMPERATURE probe's signal wire(s) are connected to
@@ -130,6 +135,7 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   pinMode(MILK_LED, OUTPUT);
   pinMode(ESPRESSO_LED, OUTPUT);
+  pinMode(PID__RELAY_CONTROL_OUTPUT, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
   buttonMilk.attachClick(handleClickMilk);
@@ -143,8 +149,9 @@ void setup() {
 
   checkEepromState();
   
-  initialize();                     // initializes the state as "espresso"
+  initialize();                     // initializes state as "espresso" & does user feedback setup
 
+  pidControl.SetOutputLimits(LOWER_LIMIT, UPPER_LIMIT);
   pidControl.SetMode(AUTOMATIC);
 
 }
@@ -266,7 +273,7 @@ static void initialize() {
 }
 
 /**
-* Displays a boot image then clears buffer & screen
+* Clears the display then begins the screen initilization
 */
 static void initializeDisplay() {
   display.clearDisplay();
