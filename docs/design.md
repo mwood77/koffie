@@ -49,4 +49,5 @@ The purpose of this document is:
 
 
 ## Bonus features / nice to haves
-- Configurable to display units in Science & Frankenstien
+- [x] Configurable to display units in Science & Frankenstien
+    - configurable via variable in code

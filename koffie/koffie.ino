@@ -78,11 +78,19 @@ double const PID__PRESSURE_SENSOR_INPUT{12};
 double const PID__RELAY_CONTROL_OUTPUT{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
 
 /*
-* Set which analog pins your TEMPERATURE probe's signal wire(s) are connected to
+* Used when converting the temperture probes output voltage to milivolts.
+* 5.0 = 5V input
+* 3.3 = 3.3V input
+*/
+double const PIN_VOLTAGE{5.0};
+
+/*
+* Set which ANALOG pins your TEMPERATURE probe's signal wire(s) are connected to
+* 
+* https://learn.adafruit.com/tmp36-temperature-sensor/using-a-temp-sensor
 */
 int const GROUP_TEMP_PIN{A2};
 int const BOILER_TEMP_PIN{A3};
-const float BETA = 3950;        // This must be set to the beta Coefficient of you thermistor(temperature probe), usually 3000-4000
 
 /*
 * Set which unit of measure you want to display.
@@ -95,14 +103,14 @@ char const MEASUREMENT_UNIT{'C'};
 
 /*
 * A0 = to the pin your switch is wired to, set it to whatever ANALOG pin you've wired your switch into
-* MILK_LED{6} = the positive side of your LED, set "4" to the pin your LED is wired to
+* MILK_LED{6} = the positive side of your LED, set "6" to the pin your LED is wired to
 */
 OneButton buttonMilk(A0, true);
 int const MILK_LED{6};
 
 /*
 * A1 = to the pin your switch is wired to, set it to whatever ANALOG pin you've wired your switch into
-* ESPRESSO_LED{7} = the positive side of your LED, set "5" to the pin your LED is wired to
+* ESPRESSO_LED{7} = the positive side of your LED, set "7" to the pin your LED is wired to
 */
 OneButton buttonEspresso(A1, true);
 int const ESPRESSO_LED{7};
@@ -322,8 +330,11 @@ static void updateTemps() {
   int const group = analogRead(GROUP_TEMP_PIN);
   int const boiler = analogRead(BOILER_TEMP_PIN);
 
-  int const groupTemperature = convertTemperatureUnits(group);
-  int const boilerTemperature = convertTemperatureUnits(boiler);
+  Serial.println(group);
+  // Serial.print(boiler);
+
+  float const groupTemperature = convertTemperatureUnits(group * (PIN_VOLTAGE / 1024.0));
+  float const boilerTemperature = convertTemperatureUnits(boiler * (PIN_VOLTAGE / 1024.0));
 
   if (PROGRAMMING_MODE == 1) {
     toggleLED(CURRENT_MODE);
@@ -343,7 +354,9 @@ static void updateTemps() {
 * @return int the number converted to the desired units
 */
 static int convertTemperatureUnits(int mV) {
-  float celsius = 1 / (log(1 / (1023. / mV - 1)) / BETA + 1.0 / 298.15) - 273.15;
+
+  float celsius = (mV - 0.5) * 100;
+
   switch(MEASUREMENT_UNIT) {
     case 'C':
       return celsius;
