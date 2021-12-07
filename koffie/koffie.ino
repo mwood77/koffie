@@ -34,8 +34,8 @@ unsigned int EEPROM_PRESSURE_ADDRESS = 0;
 int CURRENT_MODE;
 bool PROGRAMMING_MODE = false;
 long OLD_ENCODER_POSITION{0};
-double const STEP_SIZE{0.01};
-double const UPPER_LIMIT{1.3};
+double const STEP_SIZE{0.05};
+double const UPPER_LIMIT{1.3};      // UPPER LIMIT IN BAR
 double const LOWER_LIMIT{0.0};
 long const THREAD_INTERVAL{500};
 double MEASUREMENT_INPUT;           // declare and initialize PID variables
