@@ -14,6 +14,10 @@
 * SOFTWARE.
 *
 * You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316601625012601409
+* There are some caveats for the emulator:
+*     - the temperature doesn't display right (tmp36 is not available)
+*     - there's no pressure sensor connected
+*     - there's no relay connected
 *
 */
 #include <SPI.h>
@@ -190,7 +194,6 @@ static void checkEepromState() {
   PRESSURE_SETTINGS result;
 
   if (EEPROM.read(EEPROM_PRESSURE_ADDRESS) == 255) {
-    Serial.println(F("First run - saving defaults"));
     EEPROM.put(EEPROM_PRESSURE_ADDRESS, defaultPressures);
   } 
 
@@ -240,7 +243,6 @@ static void handleEncoder() {
     }
 
     OLD_ENCODER_POSITION = newEncoderPosition;
-    Serial.println(newEncoderPosition);
   }
 
 }
@@ -331,8 +333,6 @@ static void toggleLED(int pin) {
 
 /**
 * Blinks the current mode's LED once
-*
-* @param pin the LED's pin number to toggle ON or OFF.
 */
 static void blinkLED() {
     digitalWrite(CURRENT_MODE, LOW);
@@ -394,7 +394,7 @@ static void updateTemps() {
 * Converts milivolts to celcius, fahrenheit, or kelvin
 *
 * @param mv integer, milivolts measured from the temperature sensor
-* @return int the number converted to the desired units
+* @return float the mV converted to the desired units
 */
 static float convertTemperatureUnits(int mV) {
 
@@ -433,9 +433,6 @@ static void drawStaticGUI() {
   display.println(F("GRP"));
   display.setCursor(10, 48);
   display.println(F("BLR"));
-  
-  display.setCursor(108, 54);
-  display.println(F("BAR"));
 
   drawActiveMode(CURRENT_MODE);
 }
@@ -467,14 +464,15 @@ static void drawTemperatures(int groupTemp, int boilerTemp) {
 static void drawPressure(double pressure, int programmingMode) {
 
   display.fillRect(66, 20, 62, 64, BLACK);
+  display.setTextColor(WHITE, BLACK);
 
   if (CURRENT_MODE == 25) {
     display.setCursor(70, 28);
-    display.print(F("TARG "));
+    display.print(F("TARG"));
     display.print(SETPOINT);
     
     display.setCursor(70, 48);
-    display.print(F("ACTL "));
+    display.print(F("ACTL"));
     display.print(pressure);
 
   } else {
@@ -483,7 +481,7 @@ static void drawPressure(double pressure, int programmingMode) {
     display.print(SETPOINT);
 
     display.setTextSize(1);
-    display.setCursor(108, 54);
+    display.setCursor(103, 54);
     display.print(F("BAR"));
   }
   
