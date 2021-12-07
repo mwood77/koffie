@@ -361,17 +361,11 @@ static void updateTemps() {
   int const group = analogRead(GROUP_TEMP_PIN);
   int const boiler = analogRead(BOILER_TEMP_PIN);
 
-  float const groupTemperature = convertTemperatureUnits(group * (PIN_VOLTAGE / 1024.0));
-  float const boilerTemperature = convertTemperatureUnits(boiler * (PIN_VOLTAGE / 1024.0));
+  float const groupTemperature = convertTemperatureUnits(group);
+  float const boilerTemperature = convertTemperatureUnits(boiler);
 
   // CHECK PRESSURE LEVEL
-  // MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
-  MEASUREMENT_INPUT = analogRead(groupTemperature);       // @todo - swap back to pressure pin
-
-  if (PROGRAMMING_MODE == 1) {
-    toggleLED(CURRENT_MODE);
-    drawActiveMode(CURRENT_MODE);
-  }
+  MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
 
   // COMPUTE PID LEVELS
   pidControl.Compute();
@@ -388,6 +382,11 @@ static void updateTemps() {
   drawTemperatures(groupTemperature, boilerTemperature);
   drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
 
+  if (PROGRAMMING_MODE == 1) {
+    toggleLED(CURRENT_MODE);
+    drawActiveMode(CURRENT_MODE);
+  }
+
 	digitalWrite(LED_BUILTIN, LOW); 
 }
 
@@ -397,16 +396,20 @@ static void updateTemps() {
 * @param mv integer, milivolts measured from the temperature sensor
 * @return int the number converted to the desired units
 */
-static int convertTemperatureUnits(int mV) {
+static float convertTemperatureUnits(int mV) {
 
-  float celsius = (mV - 0.5) * 100;
+  float voltage = mV * 5.0;
+  voltage /= 1024.0;
+
+  float celsius = (voltage - 0.5) * 100;
+  float fahrenheit = (celsius * 9.0 / 5.0) + 32.0;
 
   switch(MEASUREMENT_UNIT) {
     case 'C':
       return celsius;
       break;
     case 'F':
-      return celsius * (9 / 5) + 32;
+      return fahrenheit;
       break;
     case 'K':
       return celsius + 273.15;
