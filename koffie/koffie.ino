@@ -26,19 +26,24 @@
 #include "PID_v1.h"
 #include "Thread.h"
 
+/*
+* DO NOT CHANGE THESE VARIABLES!
+*/
 unsigned int EEPROM_PRESSURE_ADDRESS = 0;
 
-int CURRENT_MODE;                 // USED TO INDICATE CURRENT MODE
-bool PROGRAMMING_MODE = false;    // PROGRAMMING MODE FLAG
+int CURRENT_MODE;
+bool PROGRAMMING_MODE = false;
 long OLD_ENCODER_POSITION{0};
-long const THREAD_INTERVAL{1000};
-double const UPPER_LIMIT{1.0};      // declare and initialize PID variables
-double const LOWER_LIMIT{0.0};      // declare and initialize PID variables
-double SETPOINT;                   // declare and initialize PID variables
-double KP{2};                      // declare and initialize PID variables
-double KI{5};                      // declare and initialize PID variables
-double KD{1};                      // declare and initialize PID variables
-
+double const STEP_SIZE{0.01};
+double const UPPER_LIMIT{1.3};
+double const LOWER_LIMIT{0.0};
+long const THREAD_INTERVAL{500};
+double MEASUREMENT_INPUT;           // declare and initialize PID variables
+double CONTROL_OUTPUT;              // declare and initialize PID variables
+double SETPOINT;                    // declare and initialize PID variables
+double KP{2.5};                     // declare and initialize PID variables
+double KI{0.06};                    // declare and initialize PID variables
+double KD{0.8};                     // declare and initialize PID variables
 
 /*
 * Data Model
@@ -74,8 +79,8 @@ PRESSURE_SETTINGS usersDesiredTemperatures;
 * 
 * Some good background reading regarding the Arrduino's PWM: https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
 */
-double const PID__PRESSURE_SENSOR_INPUT{12};
-double const PID__RELAY_CONTROL_OUTPUT{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
+double const PRESSURE_SENSOR_INPUT_PIN{12};
+double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
 
 /*
 * Used when converting the temperture probes output voltage to milivolts.
@@ -135,15 +140,21 @@ int const OLED_RESET{-1};            // Reset pin
 
 Thread timerThread = Thread();
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-PID pidControl(&PID__PRESSURE_SENSOR_INPUT, &PID__RELAY_CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, DIRECT);
+
+//P_ON_M specifies that Proportional on Measurement be used
+// PID pidControl(&PID__PRESSURE_SENSOR_INPUT, &PID__RELAY_CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, P_ON_M, DIRECT);
+PID pidControl(&MEASUREMENT_INPUT, &CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, P_ON_M, DIRECT);
 
 void setup() {
+
+  MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  SETPOINT = 100;
 
   Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   pinMode(MILK_LED, OUTPUT);
   pinMode(ESPRESSO_LED, OUTPUT);
-  pinMode(PID__RELAY_CONTROL_OUTPUT, OUTPUT);
+  pinMode(RELAY_CONTROL_OUTPUT_PIN, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
   buttonMilk.attachClick(handleClickMilk);
@@ -156,11 +167,10 @@ void setup() {
   timerThread.setInterval(THREAD_INTERVAL);
 
   checkEepromState();
+
+  pidControl.SetMode(AUTOMATIC);
   
   initialize();                     // initializes state as "espresso" & does user feedback setup
-
-  pidControl.SetOutputLimits(LOWER_LIMIT, UPPER_LIMIT);
-  pidControl.SetMode(AUTOMATIC);
 
 }
 
@@ -173,8 +183,6 @@ void loop() {
   if (timerThread.shouldRun()) {
     timerThread.run();
   }
-
-  pidControl.Compute();
   
 }
 
@@ -214,9 +222,27 @@ static void handleEncoder() {
         toggleLED(MILK_LED);
       }
     }
+
+    if (OLD_ENCODER_POSITION < newEncoderPosition) {              // the ape wants moar pressure!
+        SETPOINT += STEP_SIZE;
+
+        if (SETPOINT > UPPER_LIMIT) {
+          SETPOINT = UPPER_LIMIT;
+        }
+
+    } else {
+      SETPOINT -= STEP_SIZE;
+
+      if (SETPOINT < LOWER_LIMIT) {
+        SETPOINT = LOWER_LIMIT;
+      }
+      
+    }
+
     OLD_ENCODER_POSITION = newEncoderPosition;
     Serial.println(newEncoderPosition);
   }
+
 }
 
 /**
@@ -230,6 +256,7 @@ static void handleClickMilk() {
   }
 
   CURRENT_MODE = MILK_LED;
+  SETPOINT = usersDesiredTemperatures.milk;
 
   if (checkStateLED(MILK_LED) == LOW) {
     toggleLED(MILK_LED);
@@ -249,6 +276,7 @@ static void handleClickEspresso() {
   }
 
   CURRENT_MODE = ESPRESSO_LED;
+  SETPOINT = usersDesiredTemperatures.espresso;
 
   if (checkStateLED(ESPRESSO_LED) == LOW) {
     toggleLED(ESPRESSO_LED);
@@ -277,6 +305,9 @@ static void enableProgrammingMode() {
 static void initialize() {
   CURRENT_MODE = ESPRESSO_LED;
   toggleLED(ESPRESSO_LED);
+  
+  SETPOINT = usersDesiredTemperatures.espresso;
+  
   initializeDisplay();
 }
 
@@ -330,16 +361,29 @@ static void updateTemps() {
   int const group = analogRead(GROUP_TEMP_PIN);
   int const boiler = analogRead(BOILER_TEMP_PIN);
 
-  Serial.println(group);
-  // Serial.print(boiler);
-
   float const groupTemperature = convertTemperatureUnits(group * (PIN_VOLTAGE / 1024.0));
   float const boilerTemperature = convertTemperatureUnits(boiler * (PIN_VOLTAGE / 1024.0));
+
+  // CHECK PRESSURE LEVEL
+  // MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  MEASUREMENT_INPUT = analogRead(groupTemperature);       // @todo - swap back to pressure pin
 
   if (PROGRAMMING_MODE == 1) {
     toggleLED(CURRENT_MODE);
     drawActiveMode(CURRENT_MODE);
   }
+
+  // COMPUTE PID LEVELS
+  pidControl.Compute();
+
+  // APPLY PID COMPUTE TO RELAY
+  analogWrite(RELAY_CONTROL_OUTPUT_PIN, CONTROL_OUTPUT);
+
+  Serial.print(F("SETPOINT: "));
+  Serial.print(SETPOINT);
+  
+  Serial.print(F("  |  CONTROL_OUTPUT: "));
+  Serial.println(CONTROL_OUTPUT);
 
   drawTemperatures(groupTemperature, boilerTemperature);
   drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
@@ -424,7 +468,7 @@ static void drawPressure(double pressure, int programmingMode) {
   if (CURRENT_MODE == 25) {
     display.setCursor(70, 28);
     display.print(F("TARG "));
-    display.print(pressure);
+    display.print(SETPOINT);
     
     display.setCursor(70, 48);
     display.print(F("ACTL "));
@@ -433,7 +477,7 @@ static void drawPressure(double pressure, int programmingMode) {
   } else {
     display.setTextSize(2);
     display.setCursor(74, 35);
-    display.print(pressure);
+    display.print(SETPOINT);
 
     display.setTextSize(1);
     display.setCursor(108, 54);
