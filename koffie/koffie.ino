@@ -83,7 +83,7 @@ PRESSURE_SETTINGS usersDesiredTemperatures;
 * 
 * Some good background reading regarding the Arrduino's PWM: https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
 */
-double const PRESSURE_SENSOR_INPUT_PIN{12};
+double const PRESSURE_SENSOR_INPUT_PIN{A3};
 double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
 
 /*
@@ -94,12 +94,11 @@ double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 
 double const PIN_VOLTAGE{5.0};
 
 /*
-* Set which ANALOG pins your TEMPERATURE probe's signal wire(s) are connected to
+* Set which ANALOGUE pins your TEMPERATURE probe's signal wire(s) are connected to
 * 
 * https://learn.adafruit.com/tmp36-temperature-sensor/using-a-temp-sensor
 */
 int const GROUP_TEMP_PIN{A2};
-int const BOILER_TEMP_PIN{A3};
 
 /*
 * Set which unit of measure you want to display.
@@ -226,7 +225,7 @@ static void handleEncoder() {
       }
     }
 
-    if (OLD_ENCODER_POSITION < newEncoderPosition) {              // the ape wants moar pressure!
+    if (OLD_ENCODER_POSITION < newEncoderPosition) {              // rotating clockwise
         SETPOINT += STEP_SIZE;
 
         if (SETPOINT > UPPER_LIMIT) {
@@ -355,12 +354,10 @@ static void updateTemps() {
 	digitalWrite(LED_BUILTIN, HIGH); 
 
   int const group = analogRead(GROUP_TEMP_PIN);
-  int const boiler = analogRead(BOILER_TEMP_PIN);
 
   float const groupTemperature = convertTemperatureUnits(group);
-  float const boilerTemperature = convertTemperatureUnits(boiler);
 
-  drawTemperatures(groupTemperature, boilerTemperature);
+  drawTemperatures(groupTemperature);
 
   updatePressure();
 
@@ -447,11 +444,18 @@ static float convertPressureUnits(int voltage) {
   * b = the offset of what 1V in PSI. In the above example, it's -7.5 as the starting pressure of 0 PSI = 0.5V
   */
 
-  float mx = (voltage * 4);
-  float b = 7.5;
+  Serial.print(F("voltage: "));
+  Serial.println(voltage);
 
-  float PSI = mx - b;
-  float BAR = (PSI) * 0.0689475728;
+  float mx = voltage * 4;
+  float b = 7.5;
+  mx -= b;
+
+  float PSI = mx;
+  float BAR = mx * 0.0689475728;
+
+  Serial.print(F("pressure psi: "));
+  Serial.println(PSI);
 
   switch(MEASUREMENT_UNIT) {
     case 'C':
@@ -479,10 +483,8 @@ static void drawStaticGUI() {
   display.drawLine(0, 19, display.width(), 19, WHITE);
   display.drawLine(64, 19, 64, display.height(), WHITE);
 
-  display.setCursor(10, 28);
-  display.println(F("GRP"));
-  display.setCursor(10, 48);
-  display.println(F("BLR"));
+  display.setCursor(30, 54);
+  display.println(F("GROUP"));
 
   drawActiveMode(CURRENT_MODE);
 
@@ -491,18 +493,16 @@ static void drawStaticGUI() {
 /**
 * Draws temperature values on screen - called in protothread
 */
-static void drawTemperatures(int groupTemp, int boilerTemp) {
-    
-  display.fillRect(40, 24, 24, 64, BLACK);         // Clear modes area
-  display.setTextColor(WHITE, BLACK);              // Prepare for overwriting data
+static void drawTemperatures(int groupTemp) {
 
-  display.setCursor(40, 28);
+  display.fillRect(8, 25, 50, 25, BLACK);         // Clear modes area
+  display.setTextColor(WHITE, BLACK);              // Prepare for overwriting data
+   
+  display.setTextSize(2);
+  display.setCursor(8, 35);
   display.print(groupTemp);
   display.print(MEASUREMENT_UNIT);
-  
-  display.setCursor(40, 48);
-  display.print(boilerTemp);
-  display.print(MEASUREMENT_UNIT);
+  display.setTextSize(1);
 
 }
 
@@ -525,7 +525,6 @@ static void drawPressure(double pressure, int programmingMode) {
     display.setCursor(70, 48);
     display.print(F("ACTL "));
     display.print(pressure);
-
   } else {
     display.setTextSize(2);
     display.setCursor(74, 35);
