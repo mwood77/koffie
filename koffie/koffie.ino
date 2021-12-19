@@ -375,7 +375,7 @@ static void updateTemps() {
 */
 static void updatePressure() {
   
-  int const sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  float const sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
   float const convertedReading = convertPressureUnits(sensor);
 
   // CHECK PRESSURE LEVEL CONVERSION TO BAR FOR PID
@@ -434,28 +434,22 @@ static float convertTemperatureUnits(int mV) {
 * @param mv integer, milivolts measurement from the pressure sensor
 * @return float the mV converted to the desired units
 */
-static float convertPressureUnits(int voltage) {
+static float convertPressureUnits(float voltage) {
 
   /*
   * y = mx + b
   * 
-  * x = span between lowest and highest output of your sensor (ex. 0V = 0 PSI OR 0.5V = 0 PSI)
+  * x = span between lowest and highest output of your sensor (ex. 0.5V = 0 PSI to 4.5V = 60 PSI - therefore the span is 4)
   * m = divide the sensor's range (0PSI to 60PSI by the voltage). ==> This is the sensor's reading! <==
   * b = the offset of what 1V in PSI. In the above example, it's -7.5 as the starting pressure of 0 PSI = 0.5V
   */
+  float const mV = voltage / 1024;
 
-  Serial.print(F("voltage: "));
-  Serial.println(voltage);
+  float result = (15 * mV);
+  result -= 7.5;
 
-  float mx = voltage * 4;
-  float b = 7.5;
-  mx -= b;
-
-  float PSI = mx;
-  float BAR = mx * 0.0689475728;
-
-  Serial.print(F("pressure psi: "));
-  Serial.println(PSI);
+  float const PSI = result;
+  float const BAR = result / 14.504;
 
   switch(MEASUREMENT_UNIT) {
     case 'C':
