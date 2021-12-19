@@ -253,6 +253,7 @@ static void handleEncoder() {
 * Handles buttons functionality for Milk
 */
 static void handleClickMilk() {
+
   if (checkStateLED(ESPRESSO_LED) == HIGH) {
     toggleLED(ESPRESSO_LED);
   }
@@ -265,6 +266,7 @@ static void handleClickMilk() {
   }
 
   drawActiveMode(CURRENT_MODE);
+  
 }
 
 /**
@@ -273,6 +275,7 @@ static void handleClickMilk() {
 * Handles buttons functionality for Espresso
 */
 static void handleClickEspresso() {
+
   if (checkStateLED(MILK_LED) == HIGH) {
     toggleLED(MILK_LED);
   }
@@ -285,20 +288,22 @@ static void handleClickEspresso() {
   }
  
   drawActiveMode(CURRENT_MODE);
+
 }
 
 /**
 * Toggles programming mode modifier
 */
 static void enableProgrammingMode() {
+  
   if (CURRENT_MODE != 25 ) {
     PROGRAMMING_MODE = !PROGRAMMING_MODE;
     
     if (checkStateLED(CURRENT_MODE) == LOW) {
       toggleLED(CURRENT_MODE);
     }
-
   }
+
 }
 
 /**
@@ -332,15 +337,6 @@ static void toggleLED(int pin) {
 }
 
 /**
-* Blinks the current mode's LED once
-*/
-static void blinkLED() {
-    digitalWrite(CURRENT_MODE, LOW);
-    delay(500);
-    digitalWrite(CURRENT_MODE, HIGH);
-}
-
-/**
 * Returns the current byte state (HIGH or LOW) of an LED's pin.
 *
 * @param pin the LED's pin number to check.
@@ -364,8 +360,33 @@ static void updateTemps() {
   float const groupTemperature = convertTemperatureUnits(group);
   float const boilerTemperature = convertTemperatureUnits(boiler);
 
-  // CHECK PRESSURE LEVEL
-  MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  drawTemperatures(groupTemperature, boilerTemperature);
+
+  updatePressure();
+
+  if (PROGRAMMING_MODE == 1) {
+    toggleLED(CURRENT_MODE);
+    drawActiveMode(CURRENT_MODE);
+  }
+
+	digitalWrite(LED_BUILTIN, LOW); 
+
+}
+
+/**
+* Measures the pressure of attached pressure probe and updates PID values
+*/
+static void updatePressure() {
+  
+  int const sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  float const convertedReading = convertPressureUnits(sensor);
+
+  // CHECK PRESSURE LEVEL CONVERSION TO BAR FOR PID
+  if (MEASUREMENT_UNIT == 'F') {
+    MEASUREMENT_INPUT = sensor * 0.0689475728;
+  } else {
+    MEASUREMENT_INPUT = sensor;
+  }
 
   // COMPUTE PID LEVELS
   pidControl.Compute();
@@ -375,19 +396,11 @@ static void updateTemps() {
 
   Serial.print(F("SETPOINT: "));
   Serial.print(SETPOINT);
-  
   Serial.print(F("  |  CONTROL_OUTPUT: "));
   Serial.println(CONTROL_OUTPUT);
 
-  drawTemperatures(groupTemperature, boilerTemperature);
-  drawPressure(0.88, PROGRAMMING_MODE);     //@todo - figure out wiring/code for pressure sensor
+  drawPressure(convertedReading, PROGRAMMING_MODE);
 
-  if (PROGRAMMING_MODE == 1) {
-    toggleLED(CURRENT_MODE);
-    drawActiveMode(CURRENT_MODE);
-  }
-
-	digitalWrite(LED_BUILTIN, LOW); 
 }
 
 /**
@@ -415,6 +428,43 @@ static float convertTemperatureUnits(int mV) {
       return celsius + 273.15;
       break;
   }
+
+}
+
+/**
+* Converts milivolts to BAR or PSI
+*
+* @param mv integer, milivolts measurement from the pressure sensor
+* @return float the mV converted to the desired units
+*/
+static float convertPressureUnits(int voltage) {
+
+  /*
+  * y = mx + b
+  * 
+  * x = span between lowest and highest output of your sensor (ex. 0V = 0 PSI OR 0.5V = 0 PSI)
+  * m = divide the sensor's range (0PSI to 60PSI by the voltage). ==> This is the sensor's reading! <==
+  * b = the offset of what 1V in PSI. In the above example, it's -7.5 as the starting pressure of 0 PSI = 0.5V
+  */
+
+  float mx = (voltage * 4);
+  float b = 7.5;
+
+  float PSI = mx - b;
+  float BAR = (PSI) * 0.0689475728;
+
+  switch(MEASUREMENT_UNIT) {
+    case 'C':
+      return BAR;
+      break;
+    case 'F':
+      return PSI;
+      break;
+    case 'K':
+      return BAR;
+      break;
+  }
+
 }
 
 /**
@@ -435,6 +485,7 @@ static void drawStaticGUI() {
   display.println(F("BLR"));
 
   drawActiveMode(CURRENT_MODE);
+
 }
 
 /**
@@ -452,7 +503,7 @@ static void drawTemperatures(int groupTemp, int boilerTemp) {
   display.setCursor(40, 48);
   display.print(boilerTemp);
   display.print(MEASUREMENT_UNIT);
-  
+
 }
 
 /**
@@ -468,11 +519,11 @@ static void drawPressure(double pressure, int programmingMode) {
 
   if (CURRENT_MODE == 25) {
     display.setCursor(70, 28);
-    display.print(F("TARG"));
+    display.print(F("TARG "));
     display.print(SETPOINT);
     
     display.setCursor(70, 48);
-    display.print(F("ACTL"));
+    display.print(F("ACTL "));
     display.print(pressure);
 
   } else {
@@ -538,4 +589,5 @@ static void drawActiveMode(int activeMode) {
   }
   
   display.setTextColor(WHITE);
+
 }
