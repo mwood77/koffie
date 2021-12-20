@@ -85,6 +85,7 @@ PRESSURE_SETTINGS usersDesiredTemperatures;
 */
 double const PRESSURE_SENSOR_INPUT_PIN{A3};
 double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
+const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
 
 /*
 * Used when converting the temperture probes output voltage to milivolts.
@@ -375,8 +376,8 @@ static void updateTemps() {
 */
 static void updatePressure() {
   
-  float const sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
-  float const convertedReading = convertPressureUnits(sensor);
+  float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
+  float convertedReading = convertPressureUnits(sensor);
 
   // CHECK PRESSURE LEVEL CONVERSION TO BAR FOR PID
   if (MEASUREMENT_UNIT == 'F') {
@@ -443,11 +444,10 @@ static float convertPressureUnits(float voltage) {
   * m = divide the sensor's range (0PSI to 60PSI by the voltage). ==> This is the sensor's reading! <==
   * b = the offset of what 1V in PSI. In the above example, it's -7.5 as the starting pressure of 0 PSI = 0.5V
   */
-  float const mV = voltage / 1024;
+  const int pressureZero = 102.4;               // analog reading of pressure transducer at 0 PSI
+  const int pressureMax = 921.6;                // analog reading of pressure transducer at 60 PSI
 
-  float result = (15 * mV);
-  result -= 7.5;
-
+  const float result = ((voltage - pressureZero) * PRESSURE_TRANSDUCER_MAX_PSI) / (pressureMax - pressureZero);
   float const PSI = result;
   float const BAR = result / 14.504;
 
@@ -518,7 +518,7 @@ static void drawPressure(double pressure, int programmingMode) {
     
     display.setCursor(70, 48);
     display.print(F("ACTL "));
-    display.print(pressure);
+    display.print(pressure, 2);
   } else {
     display.setTextSize(2);
     display.setCursor(74, 35);
