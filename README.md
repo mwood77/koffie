@@ -2,8 +2,6 @@
 An open source PID for espresso machines.
 
 ### What is koffie?
->  Did you know, *koffie* is the dutch word for coffee
-
 Koffie is an open source project which allows you (the user) to programatically set and adjust the boiler pressure of your espresso machine in real time. ☕
 
 ### Caveats

@@ -50,8 +50,10 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
 - [ ] ~[A 4-pin power switch](https://s.click.aliexpress.com/e/_A9EgSG). ~
     - ~Double check the voltage and amperage rating!~
 - [ ] [An enclosure to mount the electronics](https://s.click.aliexpress.com/e/_AKRz3E).
-- [ ] [A digital temperature sensor](https://s.click.aliexpress.com/e/_A4KEIU).
+- [ ] [2x TMP36 analog temperature sensors](https://s.click.aliexpress.com/e/_AWMTHm).
     - We'll hack this to fit in the joint between the group head and boiler.
+- [ ] [2x 4k7 resistors (also known as 4700 ohms or 4.7K resistors)](https://www.google.com/search?q=4k7+resistor).
+    - We'll use these on our switch's LEDs.
 - [ ] [A pressure transducer with a minimum rating of 30 PSI / 2 BAR](https://s.click.aliexpress.com/e/_ALg5YG). 
     - This one is great, as the thread size (1/8 NPT) is compatible with the Europiccola's manometer adapter (the gauge adapter that screws atop the sight glass).
     - If you don't have an existing pressure gauge, or need an adapter for this project:
@@ -62,5 +64,5 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
             - 12mm = M12
 
 ### Optional Extras
-- [ ] [An infrared temperature sensor](https://nl.aliexpress.com/item/4001255844417.html?). 
-    - This can be placed inside the espresso machine and pointed towards the boiler to get the boiler's temperature.
+- [ ] [Kapton Tape](https://www.google.com/search?q=kpaton+tape).
+    - We'll use this to stick our sensors to the coffee machine (this is heat resistant tape).
