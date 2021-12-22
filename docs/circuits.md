@@ -2,16 +2,12 @@
 
 # Circuit diagrams
 
-## Arduino circuit
-> content goes here
+## Arduino
+You can view an online version of the circuit diagram here:
+- [Koffie - arduino wiring diagram](https://crcit.net/c/60b06504545248359b3b8e42acd408be)
 
-## Espresso machine circuits
-Wiring diagrams for other machines will be added when available
+Alternatively, you can view a visual representation of the wiring on the emulated version of this project:
+ - [Koffie - running in an arduino simulator](https://wokwi.com/arduino/projects/316601625012601409)
 
-### La Pavoni 
-
-#### Europiccola (Pre-Millennium)
-> content goes here
-
-#### Europiccola and Professional (2000+)
-> content goes here
+### Circuit Diagram
+![wiring diagram for koffie](./images/koffie-arduino-circuit-diagram.svg)
