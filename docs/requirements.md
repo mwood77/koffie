@@ -3,18 +3,19 @@
 # Parts list and costs
 
 ## How much will this cost?
-That's hard to answer, but if you purchase everything in t the list beneath, it should come in around **$100 USD / €85**. I've spec'd slightly more expensive parts, so if you substituted some, it'll be even cheaper
+That's hard to answer, but if you purchase everything in the list beneath, it should come to no more than **$60 USD / €53**. 
 
 ## Things I've assumed you already know and own
 - A "dumb" espresso machine
 - A computer
-    - The tutorial is written using a Mac, but a Windows or Linux computer is also fine.
+    - The tutorial is written using a Mac, but a Windows or Linux computer is also fine. The instructions should be interchangable.
 - A spare phone charger & USB cable to power the Arduino
 - How to use a multimeter
 - How to solder and de-solder
-- Some spare wire, typically small gauge
+- Some spare small-gauge wire
 - Rudimentary knowledge of electronics
-- Some understanding of code (C++), but you should be able to get by without it if you follow this to the letter.
+- Some understanding of code (C++) and/or how to use an Arduino
+    - However if you follow the instruction to the letter, you should be able to get by without any previous experience.
 
 ## Required parts
 > You requirements may differ, so this list may or may not be complete depending on what sensors you want to install / your espresso machine.
@@ -22,24 +23,19 @@ That's hard to answer, but if you purchase everything in t the list beneath, it 
 I've provided links to the parts where I can. Most are sourced from Aliexpress as that's usually the most cost effective option.
 
 #### La Pavoni Europiccola & Professional
-> @todo 
->
->   - Resistor values need to be added
->   - Power swtich implementation to be verified
-
 - [ ] [Arduino Nano or other compatible](https://aliexpress.com/item/4000903444456.html). 
     - I chose the option: `Type-C USB`
         - If you choose `Type-C USB` be careful of the driver requirements (plug and play on Mac and Linux. Windows, not guaranteed). **If you don't know what this means, select a mico-USB one instead.**
-- [ ] [Arduino expansion board](https://aliexpress.com/item/4000903444456.html).
+- [ ] [Arduino expansion board](https://s.click.aliexpress.com/e/_9RjuPG).
     - **This is optional**, but it reduces your soldering workload / allows you to wire in new sensors quickly.
 - [ ] [A solid state relay](https://s.click.aliexpress.com/e/_9h01hI). 
     - Select the `SSR-40 DA` option, **or make sure you choose a solid state relay that can handle roughly 40A and mains voltage (100-240V).**
 - [ ] [An OLED screen](https://nl.aliexpress.com/item/32957309383.html). 
     - An OLED screen has a very wide viewing angle, is high contrast, and is not complex to implement.
-- [ ] [An optical encoder](https://s.click.aliexpress.com/e/_A36Y2U). 
-    - Why not a cheapie digital encoder you ask? Because those feel cheap and nasty.
+- [ ] [An encoder](https://s.click.aliexpress.com/e/_AZFjme). 
 - [ ] [A knob for the encoder](https://s.click.aliexpress.com/e/_Atgtlq). 
-- [ ] [Two illuminated momentary switches](https://s.click.aliexpress.com/e/_AFDd3K). 
+    - The better the knob, the better the encoder will feel!
+- [ ] [2x illuminated momentary switches](https://s.click.aliexpress.com/e/_AFDd3K). 
     - We will be using them to quick-select different memory modes ("Brew mode" & "Frothing mode").
         - Select: 
             - Color: `16 Ring LED`
@@ -47,8 +43,6 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
             - Size: `Self-reset momentary`
             - Standard: `choose whatever LED colour you'd like. I'd recommend matching it to your OLED.`
             - Quantity: `2`
-- [ ] ~[A 4-pin power switch](https://s.click.aliexpress.com/e/_A9EgSG). ~
-    - ~Double check the voltage and amperage rating!~
 - [ ] [An enclosure to mount the electronics](https://s.click.aliexpress.com/e/_AKRz3E).
 - [ ] [2x TMP36 analog temperature sensors](https://s.click.aliexpress.com/e/_AWMTHm).
     - We'll hack this to fit in the joint between the group head and boiler.
