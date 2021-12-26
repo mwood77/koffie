@@ -83,7 +83,7 @@
   * 
   * Some good background reading regarding the Arrduino's PWM: https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
   */
-  double const PRESSURE_SENSOR_INPUT_PIN{A3};
+  float const PRESSURE_SENSOR_INPUT_PIN{A3};
   double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
 
