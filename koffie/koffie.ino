@@ -27,6 +27,7 @@
   #include <OneButton.h>
   #include <Adafruit_SSD1306.h>
 
+  #include "Relay.h"
   #include "PID_v1.h"
   #include "Thread.h"
 
@@ -42,12 +43,18 @@
   double const UPPER_LIMIT{1.3};      // UPPER LIMIT IN BAR
   double const LOWER_LIMIT{0.0};
   long const THREAD_INTERVAL{500};
+  int const RELAY_CONTROL_DURATION{1}; // 1 = 1 second
   double MEASUREMENT_INPUT;           // declare and initialize PID variables
   double CONTROL_OUTPUT;              // declare and initialize PID variables
   double SETPOINT;                    // declare and initialize PID variables
-  double KP{2.5};                     // declare and initialize PID variables
-  double KI{0.06};                    // declare and initialize PID variables
-  double KD{0.8};                     // declare and initialize PID variables
+  // double KP{2};                     // declare and initialize PID variables
+  // double KI{0.5};                    // declare and initialize PID variables
+  // double KD{2};                     // declare and initialize PID variables
+
+  double KP{15};                     // declare and initialize PID variables   /  50 is great
+  double KI{100};                    // declare and initialize PID variables
+  double KD{20};                     // declare and initialize PID variables  /  2 is great
+
 
   /*
   * Data Model
@@ -76,16 +83,23 @@
   // *************************************************************************************
 
   /*
-  * Set which digital pin your PRESSURE probe's signal wire is connected to.
-  * Set which digital pin your RELAY's signal wire is connected to.
-  *
-  * This is critical for the relay control
+  * PRESSURE_SENSOR_INPUT_PIN = Set which DIGITIAL pin your PRESSURE probe's signal wire is connected to.
+  * RELAY_CONTROL_OUTPUT_PIN = Set which DIGITIAL pin your RELAY's signal wire is connected to.
+  * PRESSURE_TRANSDUCER_MAX_PSI = Set the maximum pressure your pressure sensor can read (EX -> if you bought a 30 PSI sensor, this value is 30.0)
+  * ATMOSPHERIC_OFFSET = Set the pressure offset of your sensor. 
+  *     To get this value, upload the code to your arduino and run it with the serial monitor open and with your pressure sensor attached. 
+  *     If the "MEASUREMENT_INPUT" is "0.0" then use 0.0 as the value.
+  *     If the reading is anything else (EX -> "MEASUREMENT_INPUT: -0.10"), then enter 0.10
   * 
-  * Some good background reading regarding the Arrduino's PWM: https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
+  * To set the 
+  *
+  * These values are critical for the relay control
+  * 
   */
   float const PRESSURE_SENSOR_INPUT_PIN{A3};
   double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
+  const double ATMOSPHERIC_OFFSET{0.08};
 
   /*
   * Used when converting the temperture probes output voltage to milivolts.
@@ -147,7 +161,8 @@
 
   //P_ON_M specifies that Proportional on Measurement be used
   // PID pidControl(&PID__PRESSURE_SENSOR_INPUT, &PID__RELAY_CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, P_ON_M, DIRECT);
-  PID pidControl(&MEASUREMENT_INPUT, &CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, P_ON_M, DIRECT);
+  PID pidControl(&MEASUREMENT_INPUT, &CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, DIRECT);
+  Relay relay(RELAY_CONTROL_OUTPUT_PIN, RELAY_CONTROL_DURATION);
 
   void setup() {
 
@@ -173,6 +188,7 @@
 
     checkEepromState();
 
+    relay.setRelayMode(relayModeAutomatic);
     pidControl.SetMode(AUTOMATIC);
     
     initialize();                     // initializes state as "espresso" & does user feedback setup
@@ -381,22 +397,32 @@
     float convertedReading = convertPressureUnits(sensor);
 
     // CHECK PRESSURE LEVEL CONVERSION TO BAR FOR PID
-    if (MEASUREMENT_UNIT == 'F') {
-      MEASUREMENT_INPUT = sensor * 0.0689475728;
-    } else {
-      MEASUREMENT_INPUT = sensor;
-    }
+    // if (MEASUREMENT_UNIT == 'F') {
+    //   // MEASUREMENT_INPUT = sensor * 0.0689475728;
+    // } else {
+    //   // MEASUREMENT_INPUT = sensor;
+    // }
+
+    MEASUREMENT_INPUT = convertedReading;
 
     // COMPUTE PID LEVELS
     pidControl.Compute();
-
+    
     // APPLY PID COMPUTE TO RELAY
-    analogWrite(RELAY_CONTROL_OUTPUT_PIN, CONTROL_OUTPUT);
+    relay.loop();
+    relay.setDutyCyclePercent(CONTROL_OUTPUT/255.0);    // Relay library only accepts values between 0 and 1
+
+    // analogWrite(RELAY_CONTROL_OUTPUT_PIN, CONTROL_OUTPUT);
 
     Serial.print(F("SETPOINT: "));
     Serial.print(SETPOINT);
-    Serial.print(F("  |  CONTROL_OUTPUT: "));
-    Serial.println(CONTROL_OUTPUT);
+    Serial.print(F("  |  convertedReading: "));
+    Serial.print(convertedReading);
+    Serial.print(F("  |  MEASUREMENT_INPUT: "));
+    Serial.print(MEASUREMENT_INPUT);
+    Serial.print(F("  |  CONTROL_OUTPUT (duty cycle): "));
+    Serial.print(CONTROL_OUTPUT/255.0*100);
+    Serial.println(F("%"));
 
     drawPressure(convertedReading, PROGRAMMING_MODE);
 
@@ -448,8 +474,8 @@
     const int pressureMax = 921.6;                // analog reading of pressure transducer at 60 PSI - if you bought it from the guide, don't change.
 
     const float result = ((voltage - pressureZero) * PRESSURE_TRANSDUCER_MAX_PSI) / (pressureMax - pressureZero);   // Result is in PSI
-    float const PSI = result;
-    float const BAR = result / 14.504;
+    float const PSI = result + ATMOSPHERIC_OFFSET;
+    float const BAR = (result / 14.504) + ATMOSPHERIC_OFFSET;
 
     switch(MEASUREMENT_UNIT) {
       case 'C':
