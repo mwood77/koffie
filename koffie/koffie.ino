@@ -47,14 +47,6 @@
   double MEASUREMENT_INPUT;           // declare and initialize PID variables
   double CONTROL_OUTPUT;              // declare and initialize PID variables
   double SETPOINT;                    // declare and initialize PID variables
-  // double KP{2};                     // declare and initialize PID variables
-  // double KI{0.5};                    // declare and initialize PID variables
-  // double KD{2};                     // declare and initialize PID variables
-
-  double KP{15};                     // declare and initialize PID variables   /  50 is great
-  double KI{100};                    // declare and initialize PID variables
-  double KD{20};                     // declare and initialize PID variables  /  2 is great
-
 
   /*
   * Data Model
@@ -94,12 +86,21 @@
   * To set the 
   *
   * These values are critical for the relay control
-  * 
   */
   float const PRESSURE_SENSOR_INPUT_PIN{A3};
   double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
   const double ATMOSPHERIC_OFFSET{0.08};
+
+
+/*
+* These values control the overall "tuning" of the PID. 
+* ======>  I'd strongly recomment NOT changing these, but if you find the tune need adjusting, use this resource: <====== 
+*   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
+*/  
+  double KP{20};                     // declare and initialize PID variables   /  20 is great
+  double KI{10};                    // declare and initialize PID variables   / 10
+  double KD{18};                     // declare and initialize PID variables  /  18 is great
 
   /*
   * Used when converting the temperture probes output voltage to milivolts.
@@ -396,13 +397,6 @@
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
 
-    // CHECK PRESSURE LEVEL CONVERSION TO BAR FOR PID
-    // if (MEASUREMENT_UNIT == 'F') {
-    //   // MEASUREMENT_INPUT = sensor * 0.0689475728;
-    // } else {
-    //   // MEASUREMENT_INPUT = sensor;
-    // }
-
     MEASUREMENT_INPUT = convertedReading;
 
     // COMPUTE PID LEVELS
@@ -410,18 +404,16 @@
     
     // APPLY PID COMPUTE TO RELAY
     relay.loop();
-    relay.setDutyCyclePercent(CONTROL_OUTPUT/255.0);    // Relay library only accepts values between 0 and 1
-
-    // analogWrite(RELAY_CONTROL_OUTPUT_PIN, CONTROL_OUTPUT);
+    relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);    // Relay library only accepts values between 0 and 1
 
     Serial.print(F("SETPOINT: "));
-    Serial.print(SETPOINT);
+    Serial.print(SETPOINT);                               // only displays in BAR in serial monitor
     Serial.print(F("  |  convertedReading: "));
     Serial.print(convertedReading);
     Serial.print(F("  |  MEASUREMENT_INPUT: "));
     Serial.print(MEASUREMENT_INPUT);
     Serial.print(F("  |  CONTROL_OUTPUT (duty cycle): "));
-    Serial.print(CONTROL_OUTPUT/255.0*100);
+    Serial.print( (CONTROL_OUTPUT / 255.0) * 100);
     Serial.println(F("%"));
 
     drawPressure(convertedReading, PROGRAMMING_MODE);
