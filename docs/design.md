@@ -10,6 +10,7 @@ The purpose of this document is:
 1. Espresso - low pressure for extracting espresso
 1. Milk - high pressure for frothing milk
 1. Manual - "on the fly" pressure adjustment
+1. Programming - overwrite the default pressure levels with custom values
 
 ## Controls
 - 2 momentary buttons which are used to set and access stored values
@@ -17,10 +18,14 @@ The purpose of this document is:
         - **Momentary press:**
             1. deactivate current program
             1. activate "Espresso Mode" & call-up pressure for extracting espresso
+        - **Long press:**
+            - See [Progamming Mode](../README.md#programming-mode)
     - Button 2:
         - **Momentary press:** 
             1. deactivate current program
             1. activate "Milk Mode" & call-up pressure for frothing milk
+        - **Long press:**
+            - See [Progamming Mode](../README.md#programming-mode)
 - 1 multi-function rotary encoder
     - If in Espresso or Milk modes:
         - deactivate current program
