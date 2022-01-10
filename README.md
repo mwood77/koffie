@@ -16,3 +16,7 @@ This section has been split across multiple pages to make the project easier to 
 1. [Parts list and costs](docs/requirements.md)
 1. [Circuit diagrams](docs/circuits.md)
 1. [Code Configurables](docs/code_configurables.md) **<- READ THIS BEFORE UPLOADING THE CODE TO YOUR ARDUINO**
+
+### Machine specific Information
+- La Pavoni
+    1. [Europiccola](docs/machines/europiccola.md)

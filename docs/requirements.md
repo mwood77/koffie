@@ -48,7 +48,9 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
     - We'll hack this to fit in the joint between the group head and boiler.
 - [ ] [2x 4k7 resistors (also known as 4700 ohms or 4.7K resistors)](https://www.google.com/search?q=4k7+resistor).
     - We'll use these on our switch's LEDs.
-- [ ] [A pressure transducer with a minimum rating of 30 PSI / 2 BAR](https://s.click.aliexpress.com/e/_ALg5YG). 
+- [ ] [2x A pressure transducer with a minimum rating of 30 PSI / 2 BAR.](https://s.click.aliexpress.com/e/_ALg5YG). 
+    - I use 60PSI sensors in this project, but you can change this variable in the project code.
+    - I'd recommend you buy 2 examples as these have a habit of failing.
     - This one is great, as the thread size (1/8 NPT) is compatible with the Europiccola's manometer adapter (the gauge adapter that screws atop the sight glass).
     - If you don't have an existing pressure gauge, or need an adapter for this project:
         - [M12 to 1/8 NPT adapter](https://www.google.com/search?q=europiccola+m12+to+1%2F8+npt)
@@ -59,4 +61,4 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
 
 ### Optional Extras
 - [ ] [Kapton Tape](https://www.google.com/search?q=kpaton+tape).
-    - We'll use this to stick our sensors to the coffee machine (this is heat resistant tape).
+    - We'll use this to attach our sensors to the coffee machine (this is heat resistant tape).
