@@ -62,3 +62,5 @@ I've provided links to the parts where I can. Most are sourced from Aliexpress a
 ### Optional Extras
 - [ ] [Kapton Tape](https://www.google.com/search?q=kpaton+tape).
     - We'll use this to attach our sensors to the coffee machine (this is heat resistant tape).
+- [ ] If you have access to a 3D printer, you can print off a faceplate for the enclosure I've linked above.
+    - [Find the models here](https://github.com/mwood77/koffie/tree/main/models)
