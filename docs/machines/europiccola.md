@@ -5,7 +5,7 @@
 ## Wiring
 - Simply wire the relay's switched voltage (mains) between the thermocouple (thermal fuse) and the power switch.
 
-## Modifiyng the pressure
+## Modifying the pressure
 > ⚠️ This is exceptionally dangerous! Only do so at your own risk! ⚠️
 
 ### Mechanical Pressure Valve
