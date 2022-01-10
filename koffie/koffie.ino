@@ -1,7 +1,19 @@
   /*
   *
+  *  
   * Welcome!
+  * Author: Michael Wood
+  * Date: 10 January, 2022
   *
+  * You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316601625012601409
+  * There are some caveats for the emulator:
+  *     - the temperature doesn't display right (tmp36 is not available)
+  *     - there's no pressure sensor connected
+  *     - there's no relay connected
+  *
+  *
+  * LICENSE
+  * 
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the MIT Public License attached to this repository
   *
@@ -12,13 +24,6 @@
   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   * SOFTWARE.
-  *
-  * You can find an emaulated "koffie" running here --> https://wokwi.com/arduino/projects/316601625012601409
-  * There are some caveats for the emulator:
-  *     - the temperature doesn't display right (tmp36 is not available)
-  *     - there's no pressure sensor connected
-  *     - there's no relay connected
-  *
   */
   #include <SPI.h>
   #include <Wire.h>
@@ -35,18 +40,17 @@
   * DO NOT CHANGE THESE VARIABLES!
   */
   unsigned int EEPROM_PRESSURE_ADDRESS = 0;
-
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
   double const STEP_SIZE{0.05};
-  double const UPPER_LIMIT{1.3};      // UPPER LIMIT IN BAR
+  double const UPPER_LIMIT{1.3};                              // UPPER LIMIT IN BAR
   double const LOWER_LIMIT{0.0};
   long const THREAD_INTERVAL{500};
-  int const RELAY_CONTROL_DURATION{1}; // 1 = 1 second
-  double MEASUREMENT_INPUT;           // declare and initialize PID variables
-  double CONTROL_OUTPUT;              // declare and initialize PID variables
-  double SETPOINT;                    // declare and initialize PID variables
+  int const RELAY_CONTROL_DURATION{1};                        // 1 = 1 second
+  double MEASUREMENT_INPUT;                                   // declare and initialize PID variables
+  double CONTROL_OUTPUT;                                      // declare and initialize PID variables
+  double SETPOINT;                                            // declare and initialize PID variables
 
   /*
   * Data Model
@@ -69,11 +73,9 @@
   */
   PRESSURE_SETTINGS usersDesiredTemperatures;
 
-
   // *************************************************************************************
   // ****************************** BEGIN CONFIGURABLES **********************************
   // *************************************************************************************
-
   /*
   * PRESSURE_SENSOR_INPUT_PIN = Set which DIGITIAL pin your PRESSURE probe's signal wire is connected to.
   * RELAY_CONTROL_OUTPUT_PIN = Set which DIGITIAL pin your RELAY's signal wire is connected to.
@@ -92,12 +94,11 @@
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
   const double ATMOSPHERIC_OFFSET{0.08};
 
-
-/*
-* These values control the overall "tuning" of the PID. 
-* ======>  I'd strongly recomment NOT changing these, but if you find the tune need adjusting, use this resource: <====== 
-*   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
-*/  
+  /*
+  * These values control the overall "tuning" of the PID. 
+  * ======>  I'd strongly recomment NOT changing these, but if you find the tune need adjusting, use this resource: <====== 
+  *   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
+  */  
   double KP{20};                     // declare and initialize PID variables   /  20 is great
   double KI{10};                    // declare and initialize PID variables   / 10
   double KD{18};                     // declare and initialize PID variables  /  18 is great
@@ -152,16 +153,12 @@
   int const SCREEN_WIDTH{128};        // OLED display width, in pixels
   int const SCREEN_HEIGHT{64};        // OLED display height, in pixels
   int const OLED_RESET{-1};            // Reset pin 
-
   // *************************************************************************************
   // ******************************* END CONFIGURABLES ***********************************
   // *************************************************************************************
 
   Thread timerThread = Thread();
   Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-  //P_ON_M specifies that Proportional on Measurement be used
-  // PID pidControl(&PID__PRESSURE_SENSOR_INPUT, &PID__RELAY_CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, P_ON_M, DIRECT);
   PID pidControl(&MEASUREMENT_INPUT, &CONTROL_OUTPUT, &SETPOINT, KP, KI, KD, DIRECT);
   Relay relay(RELAY_CONTROL_OUTPUT_PIN, RELAY_CONTROL_DURATION);
 
@@ -169,7 +166,6 @@
 
     MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     SETPOINT = 100;
-    
 
     Serial.begin(9600);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -192,7 +188,7 @@
     relay.setRelayMode(relayModeAutomatic);
     pidControl.SetMode(AUTOMATIC);
     
-    initialize();                     // initializes state as "espresso" & does user feedback setup
+    initialize();                                             // initializes state as "espresso" & does user feedback setup
 
   }
 
@@ -244,7 +240,7 @@
         }
       }
 
-      if (OLD_ENCODER_POSITION < newEncoderPosition) {              // rotating clockwise
+    if (OLD_ENCODER_POSITION < newEncoderPosition) {          // rotating clockwise
           SETPOINT += STEP_SIZE;
 
           if (SETPOINT > UPPER_LIMIT) {
@@ -404,10 +400,10 @@
     
     // APPLY PID COMPUTE TO RELAY
     relay.loop();
-    relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);    // Relay library only accepts values between 0 and 1
+    relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
 
     Serial.print(F("SETPOINT: "));
-    Serial.print(SETPOINT);                               // only displays in BAR in serial monitor
+    Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
     Serial.print(F("  |  convertedReading: "));
     Serial.print(convertedReading);
     Serial.print(F("  |  MEASUREMENT_INPUT: "));
@@ -462,8 +458,8 @@
     * Credit to Oven's Garage for the formula beneath.
     * See it explained here: https://www.youtube.com/watch?v=UrqPxwsPWGk
     */
-    const int pressureZero = 102.4;               // analog reading of pressure transducer at 0 PSI - if you bought it from the guide, don't change.
-    const int pressureMax = 921.6;                // analog reading of pressure transducer at 60 PSI - if you bought it from the guide, don't change.
+    const int pressureZero = 102.4;                           // analog reading of pressure transducer at 0 PSI - if you bought it from the guide, don't change.
+    const int pressureMax = 921.6;                            // analog reading of pressure transducer at 60 PSI - if you bought it from the guide, don't change.
 
     const float result = ((voltage - pressureZero) * PRESSURE_TRANSDUCER_MAX_PSI) / (pressureMax - pressureZero);   // Result is in PSI
     float const PSI = result + ATMOSPHERIC_OFFSET;
@@ -507,8 +503,8 @@
   */
   static void drawTemperatures(int groupTemp) {
 
-    display.fillRect(8, 25, 50, 25, BLACK);         // Clear modes area
-    display.setTextColor(WHITE, BLACK);              // Prepare for overwriting data
+    display.fillRect(8, 25, 50, 25, BLACK);                   // Clear modes area
+    display.setTextColor(WHITE, BLACK);                       // Prepare for overwriting data
     
     display.setTextSize(2);
     display.setCursor(8, 35);
@@ -527,7 +523,7 @@
   static void drawPressure(double pressure, int programmingMode) {
 
     double convertedSetPoint{0};
-    convertedSetPoint = SETPOINT * 14.504;    // Convert target display pressure from BAR to PSI 
+    convertedSetPoint = SETPOINT * 14.504;                    // Convert target display pressure from BAR to PSI 
 
     display.fillRect(66, 20, 62, 64, BLACK);
     display.setTextColor(WHITE, BLACK);
@@ -578,7 +574,7 @@
   */
   static void drawModes() {
 
-    display.fillRect(0, 0, 128, 14, BLACK);         // Clear modes area
+    display.fillRect(0, 0, 128, 14, BLACK);                   // Clear modes area
 
     display.drawRoundRect(2, 2, 40, 14, 4, WHITE);
     display.drawRoundRect(44, 2, 40, 14, 4, WHITE);
