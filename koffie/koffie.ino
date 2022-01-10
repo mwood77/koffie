@@ -176,11 +176,9 @@
     pinMode(LED_BUILTIN, OUTPUT);
 
     buttonMilk.attachClick(handleClickMilk);
-    // buttonMilk.attachLongPressStart(enableProgrammingMode);
     buttonMilk.attachLongPressStart(saveProgramMilk);
     
     buttonEspresso.attachClick(handleClickEspresso);
-    // buttonEspresso.attachLongPressStart(enableProgrammingMode);
     buttonEspresso.attachLongPressStart(saveProgramEspresso);
 
     timerThread.onRun(updateTemps);
