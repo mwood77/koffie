@@ -15,7 +15,7 @@
   * LICENSE
   * 
   * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the MIT Public License attached to this repository
+  * it under the terms of the GPL 3.0 Public License attached to this repository
   *
   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -44,7 +44,7 @@
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
   double const STEP_SIZE{0.02};
-  double const UPPER_LIMIT{1.3};                              // UPPER LIMIT IN BAR
+  double const UPPER_LIMIT{1.4};                              // UPPER LIMIT IN BAR
   double const LOWER_LIMIT{0.0};
   long const THREAD_INTERVAL{500};
   int const RELAY_CONTROL_DURATION{1};                        // 1 = 1 second
@@ -65,7 +65,7 @@
   */
   static PRESSURE_SETTINGS defaultPressures = {
     0.74f, 
-    1.1f
+    1.10f
   };
 
   /*
