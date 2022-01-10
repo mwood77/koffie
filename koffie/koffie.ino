@@ -43,7 +43,7 @@
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
-  double const STEP_SIZE{0.05};
+  double const STEP_SIZE{0.02};
   double const UPPER_LIMIT{1.3};                              // UPPER LIMIT IN BAR
   double const LOWER_LIMIT{0.0};
   long const THREAD_INTERVAL{500};
@@ -64,8 +64,8 @@
   * Default pressure values in BAR
   */
   static PRESSURE_SETTINGS defaultPressures = {
-    0.75f, 
-    0.9f
+    0.74f, 
+    1.1f
   };
 
   /*
@@ -90,13 +90,16 @@
   float const PRESSURE_SENSOR_INPUT_PIN{A3};
   double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
-  const double ATMOSPHERIC_OFFSET{0.08};
+  const double ATMOSPHERIC_OFFSET{0.0};
 
   /*
   * These values control the overall "tuning" of the PID. 
   * I'd strongly recomment NOT changing these, but if you find the tune needs adjusting, use this resource: 
   *   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
   */  
+  // double KP{203};                     // declare and initialize PID variables   /  20 is great
+  // double KI{7.2};                    // declare and initialize PID variables   / 10
+  // double KD{1.04};                     // declare and initialize PID variables  /  18 is great
   double KP{20};                     // declare and initialize PID variables   /  20 is great
   double KI{10};                    // declare and initialize PID variables   / 10
   double KD{18};                     // declare and initialize PID variables  /  18 is great
@@ -173,10 +176,12 @@
     pinMode(LED_BUILTIN, OUTPUT);
 
     buttonMilk.attachClick(handleClickMilk);
-    buttonMilk.attachLongPressStart(enableProgrammingMode);
+    // buttonMilk.attachLongPressStart(enableProgrammingMode);
+    buttonMilk.attachLongPressStart(saveProgramMilk);
     
     buttonEspresso.attachClick(handleClickEspresso);
-    buttonEspresso.attachLongPressStart(enableProgrammingMode);
+    // buttonEspresso.attachLongPressStart(enableProgrammingMode);
+    buttonEspresso.attachLongPressStart(saveProgramEspresso);
 
     timerThread.onRun(updateTemps);
     timerThread.setInterval(THREAD_INTERVAL);
@@ -211,13 +216,29 @@
     if (EEPROM.read(EEPROM_PRESSURE_ADDRESS) == 255) {
       EEPROM.put(EEPROM_PRESSURE_ADDRESS, defaultPressures);
     } 
-
     result = EEPROM.get(EEPROM_PRESSURE_ADDRESS, result);
-    Serial.println(result.espresso);
-    Serial.println(result.milk);
-
     usersDesiredTemperatures = result;
   
+  }
+
+  /**
+  * Saves new default values to EEPROM
+  */
+  static void setEepromState(int mode, float setpoint) {
+    PRESSURE_SETTINGS state;
+    state = EEPROM.get(EEPROM_PRESSURE_ADDRESS, state);
+
+    if (mode == 6) {
+      usersDesiredTemperatures.milk = setpoint;
+    }
+    if (mode == 7) {
+      usersDesiredTemperatures.espresso = setpoint;
+    }
+
+    if (state.espresso != usersDesiredTemperatures.espresso || state.milk != usersDesiredTemperatures.milk) {
+      EEPROM.put(EEPROM_PRESSURE_ADDRESS, usersDesiredTemperatures);
+    }
+    
   }
 
   /**
@@ -307,18 +328,28 @@
   }
 
   /**
-  * Toggles programming mode modifier
+  * Saves new programming value for espresso
   */
-  static void enableProgrammingMode() {
-    
-    if (CURRENT_MODE != 25 ) {
-      PROGRAMMING_MODE = !PROGRAMMING_MODE;
-      
-      if (checkStateLED(CURRENT_MODE) == LOW) {
-        toggleLED(CURRENT_MODE);
-      }
-    }
+  static void saveProgramEspresso() {
+    setEepromState(7, SETPOINT);
+    blinkLED(7);
+  }
+  /**
+  * Saves new programming value for milk
+  */
+  static void saveProgramMilk() {
+    setEepromState(6, SETPOINT);
+    blinkLED(6);
+  }
 
+  /**
+  * Rapidly blinks the LED 
+  */
+  static void blinkLED(int mode) {
+    for (int i = 0; i < 6; i++) {
+      toggleLED(mode);
+      delay(200);
+    } 
   }
 
   /**
@@ -391,6 +422,7 @@
   */
   static void updatePressure() {
     
+    float dutyCycle = relay.getDutyCyclePercent();
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
 
@@ -401,16 +433,19 @@
     
     // APPLY PID COMPUTE TO RELAY
     relay.loop();
-    relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
+
+    if (MEASUREMENT_INPUT > SETPOINT) {
+      relay.setDutyCyclePercent(0);   
+    } else {
+      relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
+    }
 
     Serial.print(F("SETPOINT: "));
     Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
-    Serial.print(F("  |  convertedReading: "));
-    Serial.print(convertedReading);
     Serial.print(F("  |  MEASUREMENT_INPUT: "));
     Serial.print(MEASUREMENT_INPUT);
-    Serial.print(F("  |  CONTROL_OUTPUT (duty cycle): "));
-    Serial.print( (CONTROL_OUTPUT / 255.0) * 100);
+    Serial.print(F("  |  dutyCycle: "));
+    Serial.print(dutyCycle * 100);
     Serial.println(F("%"));
 
     drawPressure(convertedReading, PROGRAMMING_MODE);
