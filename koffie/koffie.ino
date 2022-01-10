@@ -204,6 +204,9 @@
     
   }
 
+  /**
+  * Checks if save-state exists in memory & writes to it if it doesn't
+  */
   static void checkEepromState() {
     PRESSURE_SETTINGS result;
 
@@ -343,7 +346,7 @@
   /**
   * Changes the continuous ON of OFF state of an LED
   *
-  * @param pin the LED's pin number to toggle ON or OFF.
+  * @param pin integer - the LED's pin number to toggle ON or OFF.
   */
   static void toggleLED(int pin) {
     const boolean state = digitalRead(pin);
@@ -353,7 +356,7 @@
   /**
   * Returns the current byte state (HIGH or LOW) of an LED's pin.
   *
-  * @param pin the LED's pin number to check.
+  * @param pin integer - the LED's pin number to check.
   * @return the byte code of the given LED's state (HIGH or LOW)
   */
   static byte checkStateLED(int pin) {
@@ -419,8 +422,8 @@
   /**
   * Converts milivolts to celcius, fahrenheit, or kelvin
   *
-  * @param mv integer, milivolts measured from the temperature sensor
-  * @return float the mV converted to the desired units
+  * @param mv integer - milivolts measured from the temperature sensor
+  * @return float - the value converted to the desired units
   */
   static float convertTemperatureUnits(int mV) {
 
@@ -500,6 +503,8 @@
 
   /**
   * Draws temperature values on screen - called in protothread
+  *
+  * @param groupTemp integer - the converted value measured from the temperature sensor
   */
   static void drawTemperatures(int groupTemp) {
 
@@ -517,8 +522,8 @@
   /**
   * Draws pressure values on screen - called in protothread
   *
-  * @param pressure float, pressure in units (not mV)
-  * @param programmingMode int, takes global variable PROGRAMMING_MODE
+  * @param pressure float - pressure in units (not mV)
+  * @param programmingMode integer - takes global variable PROGRAMMING_MODE
   */
   static void drawPressure(double pressure, int programmingMode) {
 
@@ -593,6 +598,8 @@
 
   /**
   * Draws current mode as a filled rectangle
+  *
+  * @param activeMode integer - the number which represents the current mode in use: 6, 7, 25
   */
   static void drawActiveMode(int activeMode) {
 
