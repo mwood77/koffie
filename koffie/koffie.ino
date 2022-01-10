@@ -84,8 +84,6 @@
   *     To get this value, upload the code to your arduino and run it with the serial monitor open and with your pressure sensor attached. 
   *     If the "MEASUREMENT_INPUT" is "0.0" then use 0.0 as the value.
   *     If the reading is anything else (EX -> "MEASUREMENT_INPUT: -0.10"), then enter 0.10
-  * 
-  * To set the 
   *
   * These values are critical for the relay control
   */
@@ -96,7 +94,7 @@
 
   /*
   * These values control the overall "tuning" of the PID. 
-  * ======>  I'd strongly recomment NOT changing these, but if you find the tune need adjusting, use this resource: <====== 
+  * I'd strongly recomment NOT changing these, but if you find the tune needs adjusting, use this resource: 
   *   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
   */  
   double KP{20};                     // declare and initialize PID variables   /  20 is great
@@ -141,13 +139,13 @@
   int const ESPRESSO_LED{7};
 
   /*
-  * 2 = the DT pin your encoder is wired to
-  * 3 = the CLK pin your encoder is wired to
+  * 2 = the DT pin of your encoder - Set this value to whatever DIGITAL pin you've used on your Arduino
+  * 3 = the CLK pin ofyour encoder - Set this value to whatever DIGITAL pin you've used on your Arduino
   */
   Encoder encoder(3, 2);
 
   /*
-  * Set the screen width and heigh here. If you bought the OLED listed in the documentation, there's no need
+  * Set the screen width and height here. If you bought the OLED listed in the documentation, there's no need
   * to change anything. 
   */
   int const SCREEN_WIDTH{128};        // OLED display width, in pixels
