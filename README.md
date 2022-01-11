@@ -1,6 +1,8 @@
 # Koffie ☕
 Koffie is an open source project which allows you to programatically set and adjust the boiler pressure of your espresso machine in real time.
 
+Too much reading? [Watch an overview of the device here!](https://www.youtube.com/watch?v=FLI8BKzOYMY)
+
 ## Read first!
 - This proceedure is 100% reversible
 - There are some passive safety limitations built into the software, which include:
