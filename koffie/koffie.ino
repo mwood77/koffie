@@ -97,12 +97,9 @@
   * I'd strongly recomment NOT changing these, but if you find the tune needs adjusting, use this resource: 
   *   - https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops
   */  
-  // double KP{203};                     // declare and initialize PID variables   /  20 is great
-  // double KI{7.2};                    // declare and initialize PID variables   / 10
-  // double KD{1.04};                     // declare and initialize PID variables  /  18 is great
-  double KP{20};                     // declare and initialize PID variables   /  20 is great
-  double KI{10};                    // declare and initialize PID variables   / 10
-  double KD{18};                     // declare and initialize PID variables  /  18 is great
+  double KP{20};                    // PID constant = P value
+  double KI{10};                    // PID constant = I value
+  double KD{18};                    // PID constant = D value
 
   /*
   * Used when converting the temperture probes output voltage to milivolts.
@@ -164,7 +161,6 @@
   Relay relay(RELAY_CONTROL_OUTPUT_PIN, RELAY_CONTROL_DURATION);
 
   void setup() {
-
     MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     SETPOINT = 100;
 
@@ -221,6 +217,8 @@
 
   /**
   * Saves new default values to EEPROM
+  * @param mode integer - the program mode to modify (*ex. Milk)
+  * @param setpoint float - the setpoint value to save to memory
   */
   static void setEepromState(int mode, float setpoint) {
     PRESSURE_SETTINGS state;
@@ -331,13 +329,16 @@
   static void saveProgramEspresso() {
     setEepromState(7, SETPOINT);
     blinkLED(7);
+
   }
+
   /**
   * Saves new programming value for milk
   */
   static void saveProgramMilk() {
     setEepromState(6, SETPOINT);
     blinkLED(6);
+
   }
 
   /**
@@ -348,6 +349,7 @@
       toggleLED(mode);
       delay(200);
     } 
+
   }
 
   /**
@@ -360,6 +362,7 @@
     SETPOINT = usersDesiredTemperatures.espresso;
     
     initializeDisplay();
+
   }
 
   /**
@@ -368,6 +371,7 @@
   static void initializeDisplay() {
     display.clearDisplay();
     drawStaticGUI();
+
   }
 
   /**
@@ -378,6 +382,7 @@
   static void toggleLED(int pin) {
     const boolean state = digitalRead(pin);
     digitalWrite(pin, !state);
+
   }
 
   /**
@@ -388,6 +393,7 @@
   */
   static byte checkStateLED(int pin) {
     return digitalRead(pin);
+
   }
 
   /**
@@ -395,15 +401,11 @@
   * Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
   */
   static void updateTemps() {
-    
     digitalWrite(LED_BUILTIN, HIGH); 
-
     int const group = analogRead(GROUP_TEMP_PIN);
-
     float const groupTemperature = convertTemperatureUnits(group);
 
     drawTemperatures(groupTemperature);
-
     updatePressure();
 
     if (PROGRAMMING_MODE == 1) {
@@ -419,7 +421,6 @@
   * Measures the pressure of attached pressure probe and updates PID values
   */
   static void updatePressure() {
-    
     float dutyCycle = relay.getDutyCyclePercent();
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
@@ -538,7 +539,6 @@
   * @param groupTemp integer - the converted value measured from the temperature sensor
   */
   static void drawTemperatures(int groupTemp) {
-
     display.fillRect(8, 25, 50, 25, BLACK);                   // Clear modes area
     display.setTextColor(WHITE, BLACK);                       // Prepare for overwriting data
     
@@ -557,7 +557,6 @@
   * @param programmingMode integer - takes global variable PROGRAMMING_MODE
   */
   static void drawPressure(double pressure, int programmingMode) {
-
     double convertedSetPoint{0};
     convertedSetPoint = SETPOINT * 14.504;                    // Convert target display pressure from BAR to PSI 
 
@@ -609,9 +608,7 @@
   * Draws corrent mode as a filled in rectangle
   */
   static void drawModes() {
-
     display.fillRect(0, 0, 128, 14, BLACK);                   // Clear modes area
-
     display.drawRoundRect(2, 2, 40, 14, 4, WHITE);
     display.drawRoundRect(44, 2, 40, 14, 4, WHITE);
     display.drawRoundRect(86, 2, 40, 14, 4, WHITE);
@@ -633,7 +630,6 @@
   * @param activeMode integer - the number which represents the current mode in use: 6, 7, 25
   */
   static void drawActiveMode(int activeMode) {
-
     drawModes();
     display.setTextColor(BLACK);
 
