@@ -3,6 +3,16 @@ Koffie is an open source project which allows you to programatically set and adj
 
 Too much reading? [Watch an overview of the device here!](https://www.youtube.com/watch?v=FLI8BKzOYMY)
 
+### Current development (features requests and bugs)
+You can find the task board here, which shows work in progress: 
+- [View our project board](https://github.com/mwood77/koffie/projects/1)
+
+### Found a bug?
+- [Report it here - please make sure to include the what & how](https://github.com/mwood77/koffie/issues/new)
+
+### Want to contribute? Great!
+- Fork it and create a PR!
+
 ## Read first!
 - This proceedure is 100% reversible
 - There are some passive safety limitations built into the software, which include:
