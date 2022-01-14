@@ -42,6 +42,7 @@
   unsigned int EEPROM_PRESSURE_ADDRESS{0};
   int TEMPERATURE_SMOOTHING_HOLDER_POSITION{0};
   int TEMPERATURE_SMOOTHING_HOLDER[5]{0, 0, 0, 0, 0};
+  int ERROR_COUNT{0};
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
@@ -431,8 +432,14 @@
       TEMPERATURE_SMOOTHING_HOLDER_POSITION++;
     }
 
-    drawTemperatures(smoothValues(TEMPERATURE_SMOOTHING_HOLDER));
-    updatePressure();
+    if ( ERROR_COUNT >= 20 ) {                              // Faulty pressure sensor gate
+      relay.setDutyCyclePercent(0);
+      relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
+      drawSensorFailure();
+    } else {
+      drawTemperatures(smoothValues(TEMPERATURE_SMOOTHING_HOLDER));
+      updatePressure();
+    }
 
     if (PROGRAMMING_MODE == 1) {
       toggleLED(CURRENT_MODE);
@@ -451,29 +458,37 @@
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
 
-    MEASUREMENT_INPUT = convertedReading;
+    Serial.println(convertedReading - MEASUREMENT_INPUT);
 
-    // COMPUTE PID LEVELS
-    pidControl.Compute();
-    
-    // APPLY PID COMPUTE TO RELAY
-    relay.loop();
-
-    if (MEASUREMENT_INPUT > SETPOINT) {
-      relay.setDutyCyclePercent(0);   
+    if ( (convertedReading - MEASUREMENT_INPUT) >= 2 ) {
+      ERROR_COUNT++;
     } else {
-      relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
+      MEASUREMENT_INPUT = convertedReading;
+
+      // COMPUTE PID LEVELS
+      pidControl.Compute();
+      
+      // APPLY PID COMPUTE TO RELAY
+      relay.loop();
+
+      // @todo - double check relay library handling of when dutyCycle = 0%
+      if (MEASUREMENT_INPUT > SETPOINT) {
+        relay.setDutyCyclePercent(0);
+        relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
+      } else {
+        relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);    // Relay library only accepts values between 0 and 1
+      }
+
+      // Serial.print(F("SETPOINT: "));
+      // Serial.print(SETPOINT);                                 // only displays in BAR in serial monitor
+      // Serial.print(F("  |  MEASUREMENT_INPUT: "));
+      // Serial.print(MEASUREMENT_INPUT);
+      // Serial.print(F("  |  dutyCycle: "));
+      // Serial.print(dutyCycle * 100);
+      // Serial.println(F("%"));
+
+      drawPressure(convertedReading, PROGRAMMING_MODE);
     }
-
-    // Serial.print(F("SETPOINT: "));
-    // Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
-    // Serial.print(F("  |  MEASUREMENT_INPUT: "));
-    // Serial.print(MEASUREMENT_INPUT);
-    // Serial.print(F("  |  dutyCycle: "));
-    // Serial.print(dutyCycle * 100);
-    // Serial.println(F("%"));
-
-    drawPressure(convertedReading, PROGRAMMING_MODE);
 
   }
 
@@ -628,6 +643,21 @@
     
     display.display();
 
+  }
+
+  /**
+  * Draws an error message when a high number of sensor failures have been detected
+  */
+  static void drawSensorFailure() {
+    display.clearDisplay();
+    display.drawRoundRect(10, 10, 100, 50, 4, WHITE);
+    display.setCursor(40, 24);
+    display.println(F("P. SENSOR"));
+    display.setCursor(40, 34);
+    display.println(F("FAILURE"));
+    display.setCursor(40, 44);
+    display.println(F("DETECTED"));
+    display.display();
   }
 
   /**
