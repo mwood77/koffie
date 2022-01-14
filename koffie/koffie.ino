@@ -39,14 +39,16 @@
   /*
   * DO NOT CHANGE THESE VARIABLES!
   */
-  unsigned int EEPROM_PRESSURE_ADDRESS = 0;
+  unsigned int EEPROM_PRESSURE_ADDRESS{0};
+  int TEMPERATURE_SMOOTHING_HOLDER_POSITION{0};
+  int TEMPERATURE_SMOOTHING_HOLDER[5]{0, 0, 0, 0, 0};
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
   double const STEP_SIZE{0.02};
   double const UPPER_LIMIT{1.4};                              // UPPER LIMIT IN BAR
   double const LOWER_LIMIT{0.0};
-  long const THREAD_INTERVAL{500};
+  long const THREAD_INTERVAL{1000};
   int const RELAY_CONTROL_DURATION{1};                        // 1 = 1 second
   double MEASUREMENT_INPUT;                                   // declare and initialize PID variables
   double CONTROL_OUTPUT;                                      // declare and initialize PID variables
@@ -161,8 +163,6 @@
   Relay relay(RELAY_CONTROL_OUTPUT_PIN, RELAY_CONTROL_DURATION);
 
   void setup() {
-    MEASUREMENT_INPUT = analogRead(PRESSURE_SENSOR_INPUT_PIN);
-    SETPOINT = 100;
 
     Serial.begin(9600);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -397,6 +397,24 @@
   }
 
   /**
+  * Averages the total value of an array (ex. pressure or temp) and returns a single value
+  *
+  * @param array int[5] - the array[5] with values to average
+  * @return the averaged result of arrayToSmooth
+  */
+  static float smoothValues(int *array) {
+    float sum;
+
+    for (int i = 1; i <= 5; i++) {
+      sum += array[i];
+    }
+
+    sum /= 5;
+    return sum;
+
+  }
+
+  /**
   * Measures the temperature of attached temperature probes.
   * Also blinks current mode's LED if PROGRAMMING_MODE = TRUE
   */
@@ -404,8 +422,16 @@
     digitalWrite(LED_BUILTIN, HIGH); 
     int const group = analogRead(GROUP_TEMP_PIN);
     float const groupTemperature = convertTemperatureUnits(group);
+    int const numberOfSmoothedElements = sizeof(TEMPERATURE_SMOOTHING_HOLDER)/sizeof(TEMPERATURE_SMOOTHING_HOLDER[0]);
 
-    drawTemperatures(groupTemperature);
+    if (TEMPERATURE_SMOOTHING_HOLDER_POSITION > numberOfSmoothedElements) {
+      TEMPERATURE_SMOOTHING_HOLDER_POSITION = 0;
+    } else {
+      TEMPERATURE_SMOOTHING_HOLDER[TEMPERATURE_SMOOTHING_HOLDER_POSITION] = groupTemperature;
+      TEMPERATURE_SMOOTHING_HOLDER_POSITION++;
+    }
+
+    drawTemperatures(smoothValues(TEMPERATURE_SMOOTHING_HOLDER));
     updatePressure();
 
     if (PROGRAMMING_MODE == 1) {
@@ -439,13 +465,13 @@
       relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
     }
 
-    Serial.print(F("SETPOINT: "));
-    Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
-    Serial.print(F("  |  MEASUREMENT_INPUT: "));
-    Serial.print(MEASUREMENT_INPUT);
-    Serial.print(F("  |  dutyCycle: "));
-    Serial.print(dutyCycle * 100);
-    Serial.println(F("%"));
+    // Serial.print(F("SETPOINT: "));
+    // Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
+    // Serial.print(F("  |  MEASUREMENT_INPUT: "));
+    // Serial.print(MEASUREMENT_INPUT);
+    // Serial.print(F("  |  dutyCycle: "));
+    // Serial.print(dutyCycle * 100);
+    // Serial.println(F("%"));
 
     drawPressure(convertedReading, PROGRAMMING_MODE);
 
@@ -605,7 +631,7 @@
   }
 
   /**
-  * Draws corrent mode as a filled in rectangle
+  * Draws current mode as a filled-in rectangle
   */
   static void drawModes() {
     display.fillRect(0, 0, 128, 14, BLACK);                   // Clear modes area
