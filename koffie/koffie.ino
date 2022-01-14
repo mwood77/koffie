@@ -458,8 +458,6 @@
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
 
-    Serial.println(convertedReading - MEASUREMENT_INPUT);
-
     if ( (convertedReading - MEASUREMENT_INPUT) >= 2 ) {
       ERROR_COUNT++;
     } else {
@@ -471,7 +469,6 @@
       // APPLY PID COMPUTE TO RELAY
       relay.loop();
 
-      // @todo - double check relay library handling of when dutyCycle = 0%
       if (MEASUREMENT_INPUT > SETPOINT) {
         relay.setDutyCyclePercent(0);
         relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
@@ -604,22 +601,23 @@
     display.fillRect(66, 20, 62, 64, BLACK);
     display.setTextColor(WHITE, BLACK);
 
-    if (CURRENT_MODE == 25) {
+  // *************************************************************************************
+  //  If you want to display a digital readout of the current (unfiltered) pressure,
+  //  uncomment the lines beneath and the closing bracket at line 640.
+  // *************************************************************************************
 
-      display.setCursor(70, 28);
-      display.print(F("TARG "));
-
-      if (MEASUREMENT_UNIT == 'F') {
-        display.print(convertedSetPoint);
-      } else {
-        display.print(SETPOINT);
-      }
-      
-      display.setCursor(70, 48);
-      display.print(F("ACTL "));
-      display.print(pressure, 2);
-
-    } else {
+    // if (CURRENT_MODE == 25) {
+    //   display.setCursor(70, 28);
+    //   display.print(F("TARG "));
+    //   if (MEASUREMENT_UNIT == 'F') {
+    //     display.print(convertedSetPoint);
+    //   } else {
+    //     display.print(SETPOINT);
+    //   }
+    //   display.setCursor(70, 48);
+    //   display.print(F("ACTL "));
+    //   display.print(pressure, 2);
+    // } else {
 
       display.setTextSize(2);
       display.setCursor(74, 35);
@@ -639,7 +637,7 @@
         display.print(F("BAR"));
       }
 
-    }
+    // }
     
     display.display();
 
