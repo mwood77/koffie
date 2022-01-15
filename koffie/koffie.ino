@@ -42,6 +42,8 @@
   unsigned int EEPROM_PRESSURE_ADDRESS{0};
   int TEMPERATURE_SMOOTHING_HOLDER_POSITION{0};
   int TEMPERATURE_SMOOTHING_HOLDER[5]{0, 0, 0, 0, 0};
+  int INIT_TEMPERATURE{0};
+  int ERROR_COUNT{0};
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
   long OLD_ENCODER_POSITION{0};
@@ -184,6 +186,10 @@
 
     relay.setRelayMode(relayModeAutomatic);
     pidControl.SetMode(AUTOMATIC);
+
+    int const group = analogRead(GROUP_TEMP_PIN);
+    float const groupTemperature = convertTemperatureUnits(group);
+    INIT_TEMPERATURE = groupTemperature;                      // Set init temperature on boot
     
     initialize();                                             // initializes state as "espresso" & does user feedback setup
 
@@ -431,8 +437,15 @@
       TEMPERATURE_SMOOTHING_HOLDER_POSITION++;
     }
 
-    drawTemperatures(smoothValues(TEMPERATURE_SMOOTHING_HOLDER));
-    updatePressure();
+    if ( ERROR_COUNT >= 20 
+        && groupTemperature > ( INIT_TEMPERATURE  + 10 ) ) {                  // Faulty pressure sensor gate
+      relay.setDutyCyclePercent(0);
+      relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
+      drawSensorFailure();
+    } else {
+      drawTemperatures(smoothValues(TEMPERATURE_SMOOTHING_HOLDER));
+      updatePressure();
+    }
 
     if (PROGRAMMING_MODE == 1) {
       toggleLED(CURRENT_MODE);
@@ -451,29 +464,35 @@
     float sensor = analogRead(PRESSURE_SENSOR_INPUT_PIN);
     float convertedReading = convertPressureUnits(sensor);
 
-    MEASUREMENT_INPUT = convertedReading;
-
-    // COMPUTE PID LEVELS
-    pidControl.Compute();
-    
-    // APPLY PID COMPUTE TO RELAY
-    relay.loop();
-
-    if (MEASUREMENT_INPUT > SETPOINT) {
-      relay.setDutyCyclePercent(0);   
+    if ( (convertedReading - MEASUREMENT_INPUT) >= 2 ) {
+      ERROR_COUNT++;
+      // Serial.println(F("P. Sensor Fault"));
     } else {
-      relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
+      MEASUREMENT_INPUT = convertedReading;
+
+      // COMPUTE PID LEVELS
+      pidControl.Compute();
+      
+      // APPLY PID COMPUTE TO RELAY
+      relay.loop();
+
+      if (MEASUREMENT_INPUT > SETPOINT) {
+        relay.setDutyCyclePercent(0);
+        relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
+      } else {
+        relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);    // Relay library only accepts values between 0 and 1
+      }
+
+      // Serial.print(F("SETPOINT: "));
+      // Serial.print(SETPOINT);                                 // only displays in BAR in serial monitor
+      // Serial.print(F("  |  MEASUREMENT_INPUT: "));
+      // Serial.print(MEASUREMENT_INPUT);
+      // Serial.print(F("  |  dutyCycle: "));
+      // Serial.print(dutyCycle * 100);
+      // Serial.println(F("%"));
+
+      drawPressure(convertedReading, PROGRAMMING_MODE);
     }
-
-    // Serial.print(F("SETPOINT: "));
-    // Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
-    // Serial.print(F("  |  MEASUREMENT_INPUT: "));
-    // Serial.print(MEASUREMENT_INPUT);
-    // Serial.print(F("  |  dutyCycle: "));
-    // Serial.print(dutyCycle * 100);
-    // Serial.println(F("%"));
-
-    drawPressure(convertedReading, PROGRAMMING_MODE);
 
   }
 
@@ -589,22 +608,23 @@
     display.fillRect(66, 20, 62, 64, BLACK);
     display.setTextColor(WHITE, BLACK);
 
-    if (CURRENT_MODE == 25) {
+  // *************************************************************************************
+  //  If you want to display a digital readout of the current (unfiltered) pressure,
+  //  uncomment the lines beneath and the closing bracket at line 640.
+  // *************************************************************************************
 
-      display.setCursor(70, 28);
-      display.print(F("TARG "));
-
-      if (MEASUREMENT_UNIT == 'F') {
-        display.print(convertedSetPoint);
-      } else {
-        display.print(SETPOINT);
-      }
-      
-      display.setCursor(70, 48);
-      display.print(F("ACTL "));
-      display.print(pressure, 2);
-
-    } else {
+    // if (CURRENT_MODE == 25) {
+    //   display.setCursor(70, 28);
+    //   display.print(F("TARG "));
+    //   if (MEASUREMENT_UNIT == 'F') {
+    //     display.print(convertedSetPoint);
+    //   } else {
+    //     display.print(SETPOINT);
+    //   }
+    //   display.setCursor(70, 48);
+    //   display.print(F("ACTL "));
+    //   display.print(pressure, 2);
+    // } else {
 
       display.setTextSize(2);
       display.setCursor(74, 35);
@@ -624,10 +644,25 @@
         display.print(F("BAR"));
       }
 
-    }
+    // }
     
     display.display();
 
+  }
+
+  /**
+  * Draws an error message when a high number of sensor failures have been detected
+  */
+  static void drawSensorFailure() {
+    display.clearDisplay();
+    display.drawRoundRect(10, 10, 100, 50, 4, WHITE);
+    display.setCursor(40, 24);
+    display.println(F("P. SENSOR"));
+    display.setCursor(40, 34);
+    display.println(F("FAILURE"));
+    display.setCursor(40, 44);
+    display.println(F("DETECTED"));
+    display.display();
   }
 
   /**
