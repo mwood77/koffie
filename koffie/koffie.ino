@@ -42,6 +42,7 @@
   unsigned int EEPROM_PRESSURE_ADDRESS{0};
   int TEMPERATURE_SMOOTHING_HOLDER_POSITION{0};
   int TEMPERATURE_SMOOTHING_HOLDER[5]{0, 0, 0, 0, 0};
+  int INIT_TEMPERATURE{0};
   int ERROR_COUNT{0};
   int CURRENT_MODE;
   bool PROGRAMMING_MODE = false;
@@ -185,6 +186,10 @@
 
     relay.setRelayMode(relayModeAutomatic);
     pidControl.SetMode(AUTOMATIC);
+
+    int const group = analogRead(GROUP_TEMP_PIN);
+    float const groupTemperature = convertTemperatureUnits(group);
+    INIT_TEMPERATURE = groupTemperature;                      // Set init temperature on boot
     
     initialize();                                             // initializes state as "espresso" & does user feedback setup
 
@@ -432,7 +437,8 @@
       TEMPERATURE_SMOOTHING_HOLDER_POSITION++;
     }
 
-    if ( ERROR_COUNT >= 20 ) {                              // Faulty pressure sensor gate
+    if ( ERROR_COUNT >= 20 
+        && groupTemperature > ( INIT_TEMPERATURE  + 10 ) ) {                  // Faulty pressure sensor gate
       relay.setDutyCyclePercent(0);
       relay.setRelayPosition(relayPositionOpen);            // change relayPositionOpen to relayPositionClosed if your relay is normally open
       drawSensorFailure();
@@ -460,6 +466,7 @@
 
     if ( (convertedReading - MEASUREMENT_INPUT) >= 2 ) {
       ERROR_COUNT++;
+      // Serial.println(F("P. Sensor Fault"));
     } else {
       MEASUREMENT_INPUT = convertedReading;
 
