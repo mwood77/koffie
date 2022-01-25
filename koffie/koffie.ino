@@ -92,7 +92,7 @@
   float const PRESSURE_SENSOR_INPUT_PIN{A3};
   double const RELAY_CONTROL_OUTPUT_PIN{11};       // PWM compatible output @ 498 Hz (CHECK BEFORE CHANGING)
   const int PRESSURE_TRANSDUCER_MAX_PSI = 60.0;    // Change this value to the maximum value your pressure sensor can read in PSI. Ex: 30 PSI sensor = 30.0
-  const double ATMOSPHERIC_OFFSET{0.0};
+  const double ATMOSPHERIC_OFFSET{0.0};            // Example offset of -0.17 (measured against physical gauge)
 
   /*
   * These values control the overall "tuning" of the PID. 
@@ -453,17 +453,18 @@
 
     MEASUREMENT_INPUT = convertedReading;
 
+    if (MEASUREMENT_INPUT > SETPOINT) {
+      relay.setDutyCyclePercent(0);
+      relay.setRelayPosition(relayPositionOpen);                // change relayPositionOpen to relayPositionClosed if your relay is normally open
+    } else {
+      relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
+    }
+
     // COMPUTE PID LEVELS
     pidControl.Compute();
     
     // APPLY PID COMPUTE TO RELAY
     relay.loop();
-
-    if (MEASUREMENT_INPUT > SETPOINT) {
-      relay.setDutyCyclePercent(0);   
-    } else {
-      relay.setDutyCyclePercent(CONTROL_OUTPUT / 255.0);        // Relay library only accepts values between 0 and 1
-    }
 
     // Serial.print(F("SETPOINT: "));
     // Serial.print(SETPOINT);                                   // only displays in BAR in serial monitor
@@ -589,22 +590,24 @@
     display.fillRect(66, 20, 62, 64, BLACK);
     display.setTextColor(WHITE, BLACK);
 
-    if (CURRENT_MODE == 25) {
-
-      display.setCursor(70, 28);
-      display.print(F("TARG "));
-
-      if (MEASUREMENT_UNIT == 'F') {
-        display.print(convertedSetPoint);
-      } else {
-        display.print(SETPOINT);
-      }
-      
-      display.setCursor(70, 48);
-      display.print(F("ACTL "));
-      display.print(pressure, 2);
-
-    } else {
+  
+      // *********************************************************************************************************
+      //  If you want to display a digital readout of the current (unfiltered) pressure in MANU mode,
+      //  uncomment the lines beneath and the closing bracket at line 629.
+      // *********************************************************************************************************
+      //
+      // if (CURRENT_MODE == 25) {
+      //   display.setCursor(70, 28);
+      //   display.print(F("TARG "));
+      //   if (MEASUREMENT_UNIT == 'F') {
+      //     display.print(convertedSetPoint);
+      //   } else {
+      //     display.print(SETPOINT);
+      //   }
+      //   display.setCursor(70, 48);
+      //   display.print(F("ACTL "));
+      //   display.print(pressure, 2);
+      // } else {
 
       display.setTextSize(2);
       display.setCursor(74, 35);
@@ -623,11 +626,10 @@
       } else {
         display.print(F("BAR"));
       }
-
-    }
+    
+    // }
     
     display.display();
-
   }
 
   /**
