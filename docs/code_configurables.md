@@ -28,3 +28,23 @@ You can find these configurable values located between the following headers in 
 ```
 
 ## Please read the comments closesly and do not change any of the other code unless you understand what is going on. If you can see an improvement point, please raise a PR!
+
+
+## Arduino Libraries Required
+Most of the required libraries are included, or are automatically downloaded on the first compilation.
+
+If the Arduino IDE (2.0) fails to compile the code, it's probably unable to find a library. Please make sure you've downloaded the following (slightly obscure) libraries:
+
+1. **Encoder** - by Paul Stoffregen
+    - Version 1.4.2
+1. **OneButton** - by Matthias Hertel
+    - Version 2.0.4
+1. **Adafruit SSD1306** - by Adafruit
+    - Version 2.5.1
+    - Make sure to install all of the required dependencies
+
+## Helpful hints
+1. Make sure to turn on the option `Show verbose output during: [x] compile`
+    - This is found under **Arduino IDE** -> **Preferences** on macOS
+    - This is found under **File** -> **Preferences** on Windows
+    - This will give a lot of output during compile, but it makes it much easier to diagnose what went wrong.
