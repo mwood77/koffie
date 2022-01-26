@@ -453,7 +453,8 @@
 
     MEASUREMENT_INPUT = convertedReading;
 
-    if (MEASUREMENT_INPUT > SETPOINT) {
+    // Cut if measurement is higher than setpoint, or if input is beneath -0.1 BAR; potential runaway condition
+    if (MEASUREMENT_INPUT > SETPOINT || MEASUREMENT_INPUT <= -0.1) {
       relay.setDutyCyclePercent(0);
       relay.setRelayPosition(relayPositionOpen);                // change relayPositionOpen to relayPositionClosed if your relay is normally open
     } else {
