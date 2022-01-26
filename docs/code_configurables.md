@@ -10,6 +10,10 @@ If you've never used/programmed an Arduino before, I'd strongly suggest you star
 There are a number of files but there are only a few things you **might** need to change. 
 You can find these configurable values located between the following headers in `koffie.ino`
 
+<hr>
+Please read the comments closesly and do not change any of the other code unless you understand what is going on. If you can see an improvement point, please raise a PR!
+<hr>
+
 ```
  File: ~/koffie/koffie.ino
 
@@ -26,9 +30,6 @@ You can find these configurable values located between the following headers in 
 // ******************************* END CONFIGURABLES ***********************************
 // *************************************************************************************
 ```
-
-## Please read the comments closesly and do not change any of the other code unless you understand what is going on. If you can see an improvement point, please raise a PR!
-
 
 ## Arduino Libraries Required
 Most of the required libraries are included, or are automatically downloaded on the first compilation.
